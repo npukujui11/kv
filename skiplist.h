@@ -262,7 +262,7 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
 
     // 从最大层级开始，逐层查找节点
     for (int i = _skip_list_level; i >= 0; i--) { 
-        while (current->forward[i] != nullptr && current->forward[i]->get_key() < key) {
+        while (current->forward[i] != nullptr && current->forward[i]->getKey() < key) {
             current = current->forward[i];
         }
         // 记录每一层中待更新指针的节点
@@ -272,7 +272,7 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
     // 移动到最底层的下一个节点，准备插入操作
     current = current->forward[0];
     // 检查待插入节点的键是否已经存在
-    if (current != nullptr && current->get_key() == key) { 
+    if (current != nullptr && current->getKey() == key) { 
         /*
          * 这里可以考虑插入覆盖操作
          * current->set_value(value);
@@ -342,7 +342,7 @@ bool SkipList<K, V>::search_element(K key) {
 
     for (int i = _skip_list_level; i >= 0; i--) { // 从跳表的最高层开始查找
         // 遍历当前层级，直到下一个节点的键值大于要查找的键值
-        while (current->forward[i] != nullptr && current->forward[i]->get_key() < key) {
+        while (current->forward[i] != nullptr && current->forward[i]->getKey() < key) {
             // 移动到下一个节点
             current = current->forward[i];
         }
@@ -350,8 +350,8 @@ bool SkipList<K, V>::search_element(K key) {
     }
     // 检查当前层（最底层）的下一个节点的键值是否为要查找的键值
     current = current->forward[0];
-    if (current != nullptr && current->get_key() == key) { 
-        std::cout << "Found key: " << key << ", value: " << current->get_value() << std::endl;
+    if (current != nullptr && current->getKey() == key) { 
+        std::cout << "Found key: " << key << ", value: " << current->getValue() << std::endl;
         return true; // 找到了
     }
 
