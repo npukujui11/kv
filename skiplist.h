@@ -171,9 +171,9 @@ SkipList<K, V>::SkipList(int max_level) {
     this->_element_count = 0;
 
     // 创建头节点
-    K k;
-    V v;
-    this->_header = create_node(k, v, _max_level);
+    K k{}; // 使用默认初始化，不然编译器可能会报未初始化变量的错误
+    V v{}; 
+    this->_header = create_node(k, v, max_level);
 }
 
 template <typename K, typename V>
@@ -277,7 +277,7 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
          * 这里可以考虑插入覆盖操作
          * current->set_value(value);
          */
-        std::cout << "Element with key " << key << " already exists." << std::endl;
+        //std::cout << "Element with key " << key << " already exists." << std::endl;
         mtx.unlock(); 
         return 1; // 元素已存在
     } else { // 键不存在或者当前节点为空
@@ -301,7 +301,7 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
             // 当前节点指向新节点
             update[i]->forward[i] = inserted_node;
         }
-        std::cout << "Element with key " << key << " inserted successfully." << std::endl;
+        //std::cout << "Element with key " << key << " inserted successfully." << std::endl;
         _element_count++; // 更新元素计数
     }
     mtx.unlock();
@@ -336,7 +336,7 @@ level 0         1    4   9 10         30   40    50+-->60      70       100
 template <typename K, typename V>
 bool SkipList<K, V>::search_element(K key) {
 
-    std::cout << "search_element-----------------" << std::endl;
+    //std::cout << "search_element-----------------" << std::endl;
     // 定义一个指针 current，初始化为跳表的头节点 _header
     Node<K, V>* current = _header;
 
@@ -351,10 +351,10 @@ bool SkipList<K, V>::search_element(K key) {
     // 检查当前层（最底层）的下一个节点的键值是否为要查找的键值
     current = current->forward[0];
     if (current != nullptr && current->getKey() == key) { 
-        std::cout << "Found key: " << key << ", value: " << current->getValue() << std::endl;
+        //std::cout << "Found key: " << key << ", value: " << current->getValue() << std::endl;
         return true; // 找到了
     }
 
-    std::cout << " Not found key: " << key << std::endl;
+    //std::cout << " Not found key: " << key << std::endl;
     return false; // 没找到
 }
