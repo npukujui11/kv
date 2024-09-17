@@ -308,6 +308,43 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
     return 0; // 插入成功
 }
 
+// Display skip list
+/**
+ * 显示跳表
+ * @param void
+ * @return void
+ * @description 遍历每一层的节点，输出节点的键和值 
+ */
+template <typename K, typename V>
+void SkipList<K, V>::display_list() { 
+    
+    std::cout << "\n*****Skip List*****" << "\n";
+    // 遍历每一层
+    for (int i = _skip_list_level - 1; i >= 0; i--) { 
+        Node<K, V>* node = this->_header->forward[i];
+        std::cout << "Level " << i << ": _header ";
+        
+        K prev_key = {};  // 记录前一个节点的 key，_header 之后初始化为零或默认值
+
+        // 遍历每一层的节点
+        while (node != nullptr) { 
+            int key_length = std::to_string(node->getKey()).length(); // 计算 key 的长度
+            int value_length = std::to_string(node->getValue()).length(); // 计算 value 的长度
+
+            // 计算箭头长度：假设可以用 key 值之间的差值来决定距离
+            int key_diff = node->getKey() - prev_key;  // 计算相邻节点之间的 key 差值
+            int arrow_length = 2 * key_diff + (4 + key_length + value_length) * (key_diff - 1);
+                
+            std::string arrows(arrow_length, '-');     // 生成箭头字符串
+
+            std::cout << arrows << "> " << node->getKey() << ":" << node->getValue() << " ";
+            prev_key = node->getKey();                 // 更新前一个节点的 key
+            node = node->forward[i];
+        }
+        std::cout << std::endl;
+    }
+}
+
 // Search for element in skip list 
 /*
                            +------------+
