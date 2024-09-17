@@ -358,3 +358,56 @@ bool SkipList<K, V>::search_element(K key) {
     //std::cout << " Not found key: " << key << std::endl;
     return false; // 没找到
 }
+
+/**
+ * 删除跳表中的节点
+ * @param key 要删除的节点的键
+ * @return void 
+ * @description 删除元素的过程是：
+ *                  1. 定位待删除节点：通过搜索确定需要删除的节点位置；
+ *                  2. 更新指针关系：调整相关节点的指针，以从跳表中移除目标节点；
+ *                  3. 内存回收：释放被删除节点所占用的资源。
+ */
+template <typename K, typename V>
+void SkipList<K, V>::delete_element(K key) { 
+    mtx.lock(); // 加锁
+    Node<K, V>* current = _header; // 从头节点开始
+
+    Node<K, V>* update[_max_level + 1]; // 用于记录每一层中待更新指针的节点
+    memset(update, 0, sizeof(Node<K, V>*) * (_max_level + 1)); // 初始化 update 数组
+
+    // 从最大层级开始向下搜索待删除结点
+    for (int i = _skip_list_level; i >= 0; i--) { 
+        while (current->forward[i] != nullptr && current->forward[i]->getKey() < key) { 
+            current = current->forward[i];
+        }
+        update[i] = current; // 记录每一层中待更新指针的节点
+    }
+
+    current = current->forward[0]; // 移动到底层的下一个节点
+    // 检查待删除节点的键是否存在
+    if (current != nullptr && current->getKey() == key) { 
+        // 更新每一层的指针
+        for (int i = 0; i <= _skip_list_level; i++) { 
+            // 如果当前层的节点的下一个节点是待删除节点
+            if (update[i]->forward[i] == current) { 
+                // 将当前层的节点的下一个节点指向待删除节点的下一个节点
+                update[i]->forward[i] = current->forward[i];
+            } else { 
+                break; // 如果当前层的节点的下一个节点不是待删除节点，说明待删除节点不存在，直接退出
+            }
+        }
+
+        // 如果删除节点后，跳表的最高层没有节点了，降低跳表的层级
+        while (_skip_list_level > 0 && _header->forward[_skip_list_level] == nullptr) { 
+            _skip_list_level--;
+        }
+
+        //std::cout << "Element with key " << key << " deleted successfully." << std::endl;
+        delete current; // 释放被删除节点的内存
+        _element_count--; // 更新元素计数
+    }
+    mtx.unlock(); // 解锁
+    return;
+}
+
