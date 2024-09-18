@@ -2,8 +2,11 @@
 #include <cstring>
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 #include <cmath>
 #include <mutex>
+
+# define STORE_FILE "store/dump.txt" // 存储文件
 
 std::mutex mtx; // 互斥锁
 std::string delimiter = ":"; // 分隔符
@@ -133,6 +136,7 @@ public:
     Node<K, V>* create_node(K, V, int); // 创建节点
     int insert_element(K, V); // 插入元素
     void display_list(); // 显示跳表
+    void display_list_prettily(); // 以更美观的方式显示跳表
     bool search_element(K); // 查找元素
     void delete_element(K); // 删除元素
     void dump_file(); // 将跳表持久化到文件
@@ -155,7 +159,7 @@ private:
 
 private:
     bool is_valid_string(const std::string& str); // 判断字符串是否为有效字符串
-    void get_key_value_from_string(const std::string& str, std::string& key, std::string& value); // 从字符串中获取键值对
+    void get_key_value_from_string(const std::string& str, std::string* key, std::string* value); // 从字符串中获取键值对
 };
 
 /**
@@ -310,35 +314,81 @@ int SkipList<K, V>::insert_element(const K key, const V value) {
 
 // Display skip list
 /**
- * 显示跳表
+ * 打印跳表
  * @param void
  * @return void
  * @description 遍历每一层的节点，输出节点的键和值 
  */
 template <typename K, typename V>
 void SkipList<K, V>::display_list() { 
+    std::cout << "\n*****Skip List*****" << "\n";
+    // 遍历每一层
+    for (int i = _skip_list_level - 1; i >= 0; i--) { 
+        Node<K, V>* node = this->_header->forward[i];
+        std::cout << "Level " << i << ": _header ";
+        // 遍历每一层的节点
+        while (node != nullptr) { 
+            std::cout << node->getKey() << ":" << node->getValue() << " ";
+            node = node->forward[i];
+        }
+        std::cout << std::endl;
+    }
+}
+
+
+// Display skip list prettily
+/**
+ * 整齐打印跳表
+ * @param void
+ * @return void
+ * @description 遍历每一层的节点，输出节点的键和值 
+ */
+template <typename K, typename V>
+void SkipList<K, V>::display_list_prettily() { 
     
     std::cout << "\n*****Skip List*****" << "\n";
     // 遍历每一层
     for (int i = _skip_list_level - 1; i >= 0; i--) { 
         Node<K, V>* node = this->_header->forward[i];
         std::cout << "Level " << i << ": _header ";
-        
-        K prev_key = {};  // 记录前一个节点的 key，_header 之后初始化为零或默认值
+        Node<K, V>* prev_node = this->_header;
 
         // 遍历每一层的节点
         while (node != nullptr) { 
-            int key_length = std::to_string(node->getKey()).length(); // 计算 key 的长度
-            int value_length = std::to_string(node->getValue()).length(); // 计算 value 的长度
 
+            int key_diff = 0;                          // 计算相邻节点之间的 key 差值
+            int total_length_between_nodes = 0;        // 计算中间节点之间的总长度
+            Node<K, V>* temp_node = prev_node;         // 临时节点
+
+            while (temp_node != node) { 
+
+                std::stringstream temp_ss_key, temp_ss_value;
+                temp_ss_key << temp_node->getKey();
+                temp_ss_value << temp_node->getValue();
+
+                key_diff++;
+                if (key_diff > 1) {
+                    total_length_between_nodes += temp_ss_key.str().length() + temp_ss_value.str().length();
+                } else {
+                    total_length_between_nodes = 0;
+                }
+                                       
+                temp_node = temp_node->forward[0];
+            }
+
+            int arrow_length = 0;
             // 计算箭头长度：假设可以用 key 值之间的差值来决定距离
-            int key_diff = node->getKey() - prev_key;  // 计算相邻节点之间的 key 差值
-            int arrow_length = 2 * key_diff + (4 + key_length + value_length) * (key_diff - 1);
+            if (key_diff == 1) {
+                arrow_length = 2;
+            } else {
+                arrow_length = 2 * key_diff + 4 * (key_diff - 1) + total_length_between_nodes;
+            }
                 
             std::string arrows(arrow_length, '-');     // 生成箭头字符串
 
             std::cout << arrows << "> " << node->getKey() << ":" << node->getValue() << " ";
-            prev_key = node->getKey();                 // 更新前一个节点的 key
+            
+            prev_node = node;                           // 更新前一个节点
             node = node->forward[i];
         }
         std::cout << std::endl;
@@ -482,7 +532,7 @@ bool SkipList<K, V>::is_valid_string(const std::string& str) {
 
 // 将字符串分割为键和值
 template <typename K, typename V>
-void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::string& key, std::string& value) { 
+void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::string* key, std::string* value) { 
     
     if (!is_valid_string(str)) { 
         return;
