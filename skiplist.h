@@ -544,9 +544,10 @@ void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::stri
     return;
 }
 
+// Load data from file to memory
 template <typename K, typename V>
 void SkipList<K, V>::load_file() {
-    
+    mtx.lock(); // 加锁
     _file_reader.open(STORE_FILE); // 打开文件
     std::cout << "Loading data from file..." << std::endl;
 
@@ -569,4 +570,7 @@ void SkipList<K, V>::load_file() {
     delete key; // 释放内存
     delete value; // 释放内存
     _file_reader.close(); // 关闭文件
+    mtx.unlock(); // 解锁
+
+    return;
 }
