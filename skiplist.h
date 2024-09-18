@@ -153,9 +153,9 @@ private:
 
     int _element_count; // 跳表的元素个数
 
-    void get_key_value_from_string(const std::string& str, std::string& key, std::string& value); // 从字符串中获取键值对
-
+private:
     bool is_valid_string(const std::string& str); // 判断字符串是否为有效字符串
+    void get_key_value_from_string(const std::string& str, std::string& key, std::string& value); // 从字符串中获取键值对
 };
 
 /**
@@ -448,3 +448,71 @@ void SkipList<K, V>::delete_element(K key) {
     return;
 }
 
+// Dump data in memory to file
+template <typename K, typename V>
+void SkipList<K, V>::dump_file() { 
+    
+    std::cout << "Dumping data to file..." << std::endl;
+    mtx.lock(); // 加锁
+    _file_writer.open(STORE_FILE); // 打开文件，STORE_FILE是路径
+    Node<K, V>* current  = this->_header->forward[0]; // 从头节点开始遍历
+
+    while (current != nullptr) { 
+        _file_writer << current->getKey() << ":" << current->getValue() << std::endl; // 将节点的键值对写入文件
+        current = current->forward[0]; // 移动到下一个节点
+    }
+    mtx.unlock(); // 解锁
+    _file_writer.flush(); // 刷新文件
+    _file_writer.close(); // 关闭文件
+    
+    return;
+}
+
+// 验证字符串的合法性
+template <typename K, typename V>
+bool SkipList<K, V>::is_valid_string(const std::string& str) { 
+    // 如果字符串str非空，并且字符串中包含分隔符delimiter，那么返回true
+    // find()函数返回字符串中第一个匹配的位置，如果没有找到匹配的位置，则返回std::string::npos
+    if (!str.empty()&& str.find(delimiter) != std::string::npos) { 
+        return true;
+    }
+
+    return false;
+}
+
+// 将字符串分割为键和值
+template <typename K, typename V>
+void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::string& key, std::string& value) { 
+    
+    if (!is_valid_string(str)) { 
+        return;
+    }
+
+    *key = str.substr(0, str.find(delimiter)); // 获取键
+    *value = str.substr(str.find(delimiter) + 1); // 获取值
+
+    return;
+}
+
+template <typename K, typename V>
+void SkipList<K, V>::load_file() {
+    _file_reader.open(STORE_FILE); // 打开文件
+    std::string line; // 用于存储文件中的每一行数据
+    std::string *key = new std::string(); // 用于存储键
+    std::string *value = new std::string(); // 用于存储值
+
+    while (getline(_file_reader, line)) { // 逐行读取文件
+        get_key_value_from_string(line, key, value); // 将每一行数据分割为键和值
+        if (key->empty() || value->empty()) { // 如果键或值为空，跳过
+            continue;
+        }
+
+        // stoi()函数将字符串转换为整数
+        insert_element(stoi(*key), *value); // 将键值对插入跳表
+        std::cout << "key:" << *key << "value:" << *value << std::endl;
+    }
+
+    delete key; // 释放内存
+    delete value; // 释放内存
+    _file_reader.close(); // 关闭文件
+}
