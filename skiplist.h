@@ -6,7 +6,7 @@
 #include <cmath>
 #include <mutex>
 
-# define STORE_FILE "store/dump.txt" // 存储文件
+# define STORE_FILE "store/dumpFile" // 存储文件
 
 std::mutex mtx; // 互斥锁
 std::string delimiter = ":"; // 分隔符
@@ -546,10 +546,13 @@ void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::stri
 
 template <typename K, typename V>
 void SkipList<K, V>::load_file() {
+    
     _file_reader.open(STORE_FILE); // 打开文件
+    std::cout << "Loading data from file..." << std::endl;
+
     std::string line; // 用于存储文件中的每一行数据
-    std::string *key = new std::string(); // 用于存储键
-    std::string *value = new std::string(); // 用于存储值
+    std::string* key = new std::string(); // 用于存储键
+    std::string* value = new std::string(); // 用于存储值
 
     while (getline(_file_reader, line)) { // 逐行读取文件
         get_key_value_from_string(line, key, value); // 将每一行数据分割为键和值
@@ -558,8 +561,9 @@ void SkipList<K, V>::load_file() {
         }
 
         // stoi()函数将字符串转换为整数
-        insert_element(stoi(*key), *value); // 将键值对插入跳表
-        std::cout << "key:" << *key << "value:" << *value << std::endl;
+        //insert_element(stoi(*key), *value); // 将键值对插入跳表
+        insert_element(*key, *value); // 将键值对插入跳表
+        std::cout << "key: " << *key << ", " << "value: " << *value << std::endl;
     }
 
     delete key; // 释放内存
