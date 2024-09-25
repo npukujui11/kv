@@ -14,6 +14,8 @@ public:
 
     void put(const K& k, const V& v, int ttl_seconds); // 存储数据
 
+    bool remove(const K& k); // 移除数据
+
     void display(); // 打印缓存中的数据
 
     void remove_expired(); // 移除过期数据
@@ -131,6 +133,24 @@ void LRUCache<K, V>::display() {
     return;
 }
 
+/**
+ * 移除数据
+ * @param key 键 
+ */
+template <typename K, typename V>
+bool LRUCache<K, V>::remove(const K& key) { 
+    auto it = cache_map.find(key); // 在哈希表中查找键
+
+    // 如果键不存在，返回false
+    if (it == cache_map.end()) { 
+        return false;
+    }
+
+    cache_list.erase(it->second); // 删除链表中的节点
+    cache_map.erase(it); // 删除哈希表中对应的项
+
+    return true;
+}
 
 /**
  * 移除过期数据
