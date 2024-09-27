@@ -8,7 +8,9 @@ class LRUCache {
 public:
     using TimePoint = std::chrono::steady_clock::time_point; // 时间点(using 在这里等价于 typedef)
 
-    LRUCache(size_t capacity) : _capacity(capacity) {}
+    LRUCache();
+
+    LRUCache(size_t capacity); // 构造函数
 
     bool get(const K& k, V& v); // 获取数据
 
@@ -43,6 +45,25 @@ private:
     // 判断是否过期
     bool is_expired(const TimePoint& expire_time) const;
 };
+
+/*
+ * 默认构造函数
+ * 默认容量为3
+ */
+template <typename K, typename V>
+LRUCache<K, V>::LRUCache() { 
+    this->_capacity = 3; // 默认容量为3
+}
+
+
+/**
+ * 含参构造函数
+ * @param capacity 缓存容量
+ */
+template <typename K, typename V>
+LRUCache<K, V>::LRUCache(size_t capacity) { 
+    this->_capacity = capacity;
+}
 
 
 /**
