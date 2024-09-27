@@ -7,6 +7,7 @@
 
 /*
  * Test case for skip list with cache
+ * 插入带过期时间的元素，数据会
 8
 3
 1 absurd 10
@@ -20,7 +21,6 @@
 8
 4
 3
-
  */
 
 using namespace std;
