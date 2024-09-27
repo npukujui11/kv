@@ -432,7 +432,7 @@ void SkipListWithCache<K, V>::delete_element(const K& key) {
             _skip_list_level--;
         }
 
-        std::cout << "Successfully deleted key: " << key << "\n" << std::endl;
+        std::cout << "Successfully deleted key: " << key << std::endl;
         _element_count--; // 元素个数减1
     }
 
