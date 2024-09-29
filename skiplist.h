@@ -9,6 +9,7 @@
 # define STORE_FILE "store/dumpFile" // 存储文件
 
 std::mutex mtx; // 互斥锁
+std::mutex file_mtx; // 文件互斥锁
 std::string delimiter = ":"; // 分隔符
 
 /* ************************************************************************
@@ -503,7 +504,7 @@ template <typename K, typename V>
 void SkipList<K, V>::dump_file() { 
     
     std::cout << "Dumping data to file..." << std::endl;
-    mtx.lock(); // 加锁
+    file_mtx.lock(); // 加锁
     _file_writer.open(STORE_FILE); // 打开文件，STORE_FILE是路径
     Node<K, V>* current  = this->_header->forward[0]; // 从头节点开始遍历
 
@@ -511,7 +512,7 @@ void SkipList<K, V>::dump_file() {
         _file_writer << current->getKey() << ":" << current->getValue() << std::endl; // 将节点的键值对写入文件
         current = current->forward[0]; // 移动到下一个节点
     }
-    mtx.unlock(); // 解锁
+    file_mtx.unlock(); // 解锁
     _file_writer.flush(); // 刷新文件
     _file_writer.close(); // 关闭文件
     
@@ -547,7 +548,7 @@ void SkipList<K, V>::get_key_value_from_string(const std::string& str, std::stri
 // Load data from file to memory
 template <typename K, typename V>
 void SkipList<K, V>::load_file() {
-    mtx.lock(); // 加锁
+    file_mtx.lock(); // 加锁
     _file_reader.open(STORE_FILE); // 打开文件
     std::cout << "Loading data from file..." << std::endl;
 
@@ -570,7 +571,7 @@ void SkipList<K, V>::load_file() {
     delete key; // 释放内存
     delete value; // 释放内存
     _file_reader.close(); // 关闭文件
-    mtx.unlock(); // 解锁
+    file_mtx.unlock(); // 解锁
 
     return;
 }
