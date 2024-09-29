@@ -275,14 +275,11 @@ NodeWithTTL<K, V>* SkipListWithCache<K, V>::create_node(const K& key, const V& v
 template <typename K, typename V>
 int SkipListWithCache<K, V>::insert_element(const K& key, const V& value, int ttl_seconds) {
     
-    std::cout << 0 << std::endl;
     mtx.lock(); // 加锁
 
     NodeWithTTL<K, V>* current = this->_header; // 当前节点
     NodeWithTTL<K, V>* update[_max_level + 1]; // 更新节点
     memset(update, 0, sizeof(NodeWithTTL<K, V>*) * (_max_level + 1)); // 初始化更新节点
-
-    std::cout << 1 << std::endl;
 
     // start from highest level of skip list
     for (int i = _skip_list_level; i >= 0; i--) { 
@@ -292,8 +289,6 @@ int SkipListWithCache<K, V>::insert_element(const K& key, const V& value, int tt
         update[i] = current;
     }
     current = current->forward[0];
-
-    std::cout << 2 << std::endl;
 
     if (current != nullptr && current->getKey() == key) {
         //std::cout << "key: " << key << ", exists" << std::endl;
@@ -322,7 +317,6 @@ int SkipListWithCache<K, V>::insert_element(const K& key, const V& value, int tt
         _element_count++; // 元素个数加1
     }
 
-    std::cout << 3 << std::endl;
     mtx.unlock(); // 解锁
     cache.put(key, value, ttl_seconds); // 插入数据到缓存
 
@@ -504,7 +498,7 @@ void SkipListWithCache<K, V>::load_file() {
     FILE_IO_MUTEX.lock(); // 加锁
     std::cout << "Loading data from file..." << std::endl;
     _file_reader.open(DEFAULT_STORE_FILE); // 打开文件
-    
+
     if (!_file_reader.is_open()) { 
         std::cerr << "Failed to open file: " << DEFAULT_STORE_FILE << std::endl;
         FILE_IO_MUTEX.unlock(); // 解锁
@@ -521,6 +515,7 @@ void SkipListWithCache<K, V>::load_file() {
         if (key->empty() || value->empty() || expiration_time->empty()) {
             continue;
         }
+
         insert_element(*key, *value, stoi(*expiration_time)); // 插入元素
         std::cout << "key: " << *key << ", " << "value: " << *value << ", " << "expiration_time: " << *expiration_time << std::endl;
     } 
