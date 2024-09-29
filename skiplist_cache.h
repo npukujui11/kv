@@ -12,6 +12,8 @@
 std::atomic<bool> keep_running{true}; // 周期性数据持久化策略
 std::atomic<bool> running_cleanup(false); // 用于控制清理线程是否运行
 
+std::mutex FILE_IO_MUTEX; // 文件IO互斥锁
+
 // 带过期时间的跳表节点
 template <typename K, typename V>
 class NodeWithTTL{
@@ -28,6 +30,7 @@ public:
     void setValue(V); // 设置值
     void setExpireTime(TimePoint t); // 设置过期时间
     TimePoint getExpireTime() const; // 获取过期时间
+    int getRemainingTime() const; // 获取剩余时间
     NodeWithTTL<K, V>** forward; 
     int node_level; // 节点层级
 
@@ -82,6 +85,15 @@ template <typename K, typename V>
 void NodeWithTTL<K, V>::setExpireTime(TimePoint expiration_time) {
     this->expiration_time = expiration_time;
 };
+
+/*
+ * 获取剩余时间
+ * @return 剩余时间
+ */
+template <typename K, typename V>
+int NodeWithTTL<K, V>::getRemainingTime() const {
+    return std::chrono::duration_cast<std::chrono::seconds>(expiration_time - std::chrono::steady_clock::now()).count();
+}
 
 /*
  * 获取键
@@ -139,7 +151,7 @@ public:
     int size(); // 获取元素个数
 
 private:
-    void get_key_value_from_string(const std::string& line, K& key, V& value); // 从字符串中获取键值对
+    void get_key_value_from_string(const std::string& line, std::string* key, std::string* value, std::string* expiration_time); // 从字符串中获取键值对
     bool is_valid_string(const std::string& str); // 是否为有效字符串
 
     int _max_level; // 最大层级
@@ -263,11 +275,14 @@ NodeWithTTL<K, V>* SkipListWithCache<K, V>::create_node(const K& key, const V& v
 template <typename K, typename V>
 int SkipListWithCache<K, V>::insert_element(const K& key, const V& value, int ttl_seconds) {
     
+    std::cout << 0 << std::endl;
     mtx.lock(); // 加锁
 
     NodeWithTTL<K, V>* current = this->_header; // 当前节点
     NodeWithTTL<K, V>* update[_max_level + 1]; // 更新节点
     memset(update, 0, sizeof(NodeWithTTL<K, V>*) * (_max_level + 1)); // 初始化更新节点
+
+    std::cout << 1 << std::endl;
 
     // start from highest level of skip list
     for (int i = _skip_list_level; i >= 0; i--) { 
@@ -277,6 +292,8 @@ int SkipListWithCache<K, V>::insert_element(const K& key, const V& value, int tt
         update[i] = current;
     }
     current = current->forward[0];
+
+    std::cout << 2 << std::endl;
 
     if (current != nullptr && current->getKey() == key) {
         //std::cout << "key: " << key << ", exists" << std::endl;
@@ -301,10 +318,11 @@ int SkipListWithCache<K, V>::insert_element(const K& key, const V& value, int tt
             update[i]->forward[i] = inserted_node;
         }
 
-        std::cout << "Successfully inserted key: " << key << ", value: " << value << ", level: " << random_level << ", ttl: " << ttl_seconds << std::endl;
+        //std::cout << "Successfully inserted key: " << key << ", value: " << value << ", level: " << random_level << ", ttl: " << ttl_seconds << std::endl;
         _element_count++; // 元素个数加1
     }
 
+    std::cout << 3 << std::endl;
     mtx.unlock(); // 解锁
     cache.put(key, value, ttl_seconds); // 插入数据到缓存
 
@@ -449,14 +467,21 @@ template <typename K, typename V>
 void SkipListWithCache<K, V>::dump_file() {
     
     std::cout << "dump_file-----------------" << std::endl;
-    mtx.lock(); // 加锁
+    FILE_IO_MUTEX.lock(); // 加锁
     _file_writer.open(DEFAULT_STORE_FILE); // 打开文件
+
+    if (!_file_writer.is_open()) { 
+        std::cerr << "Failed to open file: " << DEFAULT_STORE_FILE << std::endl;
+        FILE_IO_MUTEX.unlock(); // 解锁
+        return;
+    }
+
     NodeWithTTL<K, V>* node = this->_header->forward[0]; // 当前节点
 
     while (node != nullptr) { 
         if (!is_expired(node->getExpireTime())) {
-            _file_writer << node->getKey() << ":" << node->getValue() << "\n";
-            std::cout << node->getKey() << ":" << node->getValue() << ";\n";
+            _file_writer << node->getKey() << ":" << node->getValue() << ":" << node->getRemainingTime() << "\n";
+            std::cout << node->getKey() << ":" << node->getValue() << ":" << node->getRemainingTime() << ";\n";
         }
         node = node->forward[0];
     }
@@ -464,7 +489,93 @@ void SkipListWithCache<K, V>::dump_file() {
     _file_writer.flush(); // 刷新文件
     _file_writer.close(); // 关闭文件
 
-    mtx.unlock(); // 解锁
+    FILE_IO_MUTEX.unlock(); // 解锁
+    return;
+}
+
+/*
+ * 从文件中加载数据
+ * @return void
+ * @remark 从文件中加载数据
+ */
+template <typename K, typename V>
+void SkipListWithCache<K, V>::load_file() { 
+
+    FILE_IO_MUTEX.lock(); // 加锁
+    std::cout << "Loading data from file..." << std::endl;
+    _file_reader.open(DEFAULT_STORE_FILE); // 打开文件
+    
+    if (!_file_reader.is_open()) { 
+        std::cerr << "Failed to open file: " << DEFAULT_STORE_FILE << std::endl;
+        FILE_IO_MUTEX.unlock(); // 解锁
+        return;
+    }
+
+    std::string line; // 行数据
+    K* key = new K(); // 键
+    V* value = new V(); // 值
+    std::string* expiration_time = new std::string(); // 剩余时间 
+
+    while (getline(_file_reader, line)) { 
+        get_key_value_from_string(line, key, value, expiration_time); // 从字符串中获取键值对
+        if (key->empty() || value->empty() || expiration_time->empty()) {
+            continue;
+        }
+        insert_element(*key, *value, stoi(*expiration_time)); // 插入元素
+        std::cout << "key: " << *key << ", " << "value: " << *value << ", " << "expiration_time: " << *expiration_time << std::endl;
+    } 
+
+    delete key; // 删除键
+    delete value; // 删除值
+    delete expiration_time; // 删除剩余时间
+
+    _file_reader.close(); // 关闭文件
+    FILE_IO_MUTEX.unlock(); // 解锁
+
+    return;
+}
+
+/*
+ * 验证字符串的合法性
+ * @param str 字符串
+ * @return bool
+ * @remark 验证字符串的合法性
+ */
+template <typename K, typename V>
+bool SkipListWithCache<K, V>::is_valid_string(const std::string& str) { 
+    // 如果字符串str非空，并且字符串中包含分隔符delimiter，那么返回true
+    // find()函数返回字符串中第一个匹配的位置，如果没有找到匹配的位置，则返回std::string::npos
+    if (!str.empty()&& str.find(delimiter) != std::string::npos) { 
+        return true;
+    }
+
+    return false;
+}
+
+/*
+ * 从字符串中获取键值对
+ * @param line 字符串
+ * @param key 键
+ * @param value 值
+ * @param expiration_time 剩余时间
+ * @return void
+ * @remark 从字符串中获取键值对
+ */
+template <typename K, typename V>
+void SkipListWithCache<K, V>::get_key_value_from_string(const std::string& str, std::string* key, std::string* value, std::string* expiration_time) { 
+    
+    if (!is_valid_string(str)) { 
+        return;
+    }
+    
+    size_t pos1 = str.find(delimiter); // 查找第一个分隔符的位置
+    size_t pos2 = str.find(delimiter, pos1 + 1); // 查找第二个分隔符的位置
+
+
+    *key = str.substr(0, pos1); // 获取键
+    *value = str.substr(pos1 + 1, pos2 - pos1 - 1); // 获取值
+    *expiration_time = str.substr(pos2 + 1); // 获取剩余时间
+
     return;
 }
 
