@@ -553,8 +553,8 @@ void SkipList<K, V>::load_file() {
     std::cout << "Loading data from file..." << std::endl;
 
     std::string line; // 用于存储文件中的每一行数据
-    std::string* key = new std::string(); // 用于存储键
-    std::string* value = new std::string(); // 用于存储值
+    K* key = new K(); // 用于存储键
+    V* value = new V(); // 用于存储值
 
     while (getline(_file_reader, line)) { // 逐行读取文件
         get_key_value_from_string(line, key, value); // 将每一行数据分割为键和值
@@ -570,6 +570,7 @@ void SkipList<K, V>::load_file() {
 
     delete key; // 释放内存
     delete value; // 释放内存
+    
     _file_reader.close(); // 关闭文件
     file_mtx.unlock(); // 解锁
 
