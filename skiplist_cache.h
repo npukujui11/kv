@@ -456,16 +456,28 @@ void SkipListWithCache<K, V>::delete_element(const K& key) {
  * 数据持久化
  * @return void
  * @remark 数据持久化
+ * 惰性删除策略2：周期性存盘的过程中，将对跳表中的过期数据进行删除
  */
 template <typename K, typename V>
 void SkipListWithCache<K, V>::dump_file() {
+    // 获取当前时间并格式化 "yyyyMMddHHmmss" 格式
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now); // 转换为time_t
+    std::tm* now_tm = std::localtime(&now_c); // 转换为tm
+
+    char time_str[20]; // 用于保存格式化后的时间字符串
+    std::strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", now_tm); // 格式化时间字符串
+
+    // 创建包含时间戳的文件名
+    std::string filename = "store/dumpFile_cache_" + std::string(time_str);
     
     std::cout << "dump_file-----------------" << std::endl;
     FILE_IO_MUTEX.lock(); // 加锁
-    _file_writer.open(DEFAULT_STORE_FILE); // 打开文件
+    _file_writer.open(filename); // 打开文件
 
+    // 如果文件打开失败
     if (!_file_writer.is_open()) { 
-        std::cerr << "Failed to open file: " << DEFAULT_STORE_FILE << std::endl;
+        std::cerr << "Failed to open file: " << filename << std::endl;
         FILE_IO_MUTEX.unlock(); // 解锁
         return;
     }
