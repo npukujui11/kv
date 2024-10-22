@@ -1,3 +1,8 @@
+> 该项目基于Skiplist-CPP项目进行开发，Skiplist-CPP项目地址：[https://github.com/youngyangyang04/Skiplist-CPP]
+> 在其基础上，添加了LRU缓存功能，支持惰性删除和周期性存盘策略等功能，对其Node类和SkipList类有较大修改，新增了LRUCache类。使用Skiplist-CPP项目的测试用例，对其进行了测试。
+> 引用项目标明出处即可。
+
+
 # 基于跳表的键值型数据库
 
 ## 1 功能描述
@@ -10,7 +15,43 @@
 4. **功能四：** 支持对过期键值对进行定向删除和惰性删除。
 5. **功能五：** 支持数据持久化和周期性数据存盘策略。
 
-### 1.2 具体功能描述
+### 1.2 提供接口
+
+* insert_element(插入数据)
+* delete_element(删除数据)
+* search_element(查找数据)
+* display_skiplist(打印跳表)
+* dump_file(数据持久化)
+* load_file(加载数据)
+* periodic_save(周期性持久化)
+* stop_periodic_save(停止周期性持久化)
+* periodic_cleanup(定期清理过期数据)
+* stop_periodic_cleanup(停止定期清理过期数据)
+
+### 1.3 项目内文件
+
+* skiplish.h Skiplist-CPP项目中的跳表实现
+* skiplist_cache.h 基于Skiplist-CPP项目的跳表实现，添加了LRU缓存功能、惰性删除、主动删除、周期性存盘策略等功能
+* LRU.h LRU缓存实现
+
+* /test/1.跳表的定义.cpp 测试 `skiplist.h` 中跳表的 `Node` 类
+* /test/2.跳表的插入.cpp 测试 `skiplist.h` 中跳表的 `insert_element` 操作
+* /test/3.跳表的删除.cpp 测试 `skiplist.h` 中跳表的 `delete_element` 和 `search_element` 操作
+* /test/4.跳表的打印.cpp 测试 `skiplist.h` 中跳表的 `display_skiplist` 操作
+* /test/5.跳表的持久化.cpp 测试 `skiplist.h` 中跳表的 `dump_file` 操作
+* /test/6.跳表的加载.cpp 测试 `skiplist.h` 中跳表的 `load_file` 操作
+* /test/7.stress_test.cpp `Skiplist-CPP`中的 `stress_test.cpp`
+* /test/8.LRU缓存.cpp 测试 `LRU.h` 中的 `LRUCache` 类
+* /test/9.LRU中惰性删除的实现.cpp 测试 `LRU.h` 中的 `LRUCache` 类的惰性删除功能
+* /test/10.插入带过期时间的元素.cpp 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的插入带过期时间的元素功能
+* /test/11.生成和读取持久化文件2.cpp 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的 `dump_file` 和 `load_file` 功能
+* /test/12.数据周期性持久化策略.cpp 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的周期性持久化策略
+* /test/13.过期数据周期性删除策略.cpp 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的过期数据周期性删除策略
+
+* /store/dumpFile `skiplist.h` 中跳表的 `dump_file` 操作生成的持久化文件
+* /store/dumpFile_cache `skiplist_cache.h` 中跳表的 `dump_file` 操作加载的持久化文件
+
+* readme.md 项目详细说明文档
 
 ## 2 具体实现细节
 
