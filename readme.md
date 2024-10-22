@@ -447,7 +447,7 @@ void NodeWithTTL<K, V>::setValue(V value) {
 
 #### 2.2.2 **`SkipListWithCache`类(跳表类)**
 
-*实现了一个带有缓存和数据持久化的跳表。其不仅支持跳表的基本操作，还增加了LRU缓存的、过期数据删除以及数据持久化功能。*
+*实现了一个带有缓存和数据持久化的跳表。其不仅支持跳表的基本操作，还增加了LRU缓存、惰性删除、过期数据删除以及数据持久化功能。*
 
 ##### **成员变量**
 
@@ -583,6 +583,18 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 
 * 关闭文件读取和写入。
 * 停止周期性删除过期数据和周期性数据持久化策略。
+* 递归删除跳表节点。
+  * `clear`函数递归删除跳表节点。
+    ```cpp
+    template <typename K, typename V>
+    void SkipListWithCache<K, V>::clear(NodeWithTTL<K, V>* current) {
+        if (current->forward[0] != nullptr) {
+            clear(current->forward[0]);
+        }
+        delete current;
+    };
+
+    ```
 * delete释放跳表的内存。
 
 ###### `insert_element(const K&, const V&, int)`
@@ -668,10 +680,27 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
     _element_count++; // 增加元素计数
 ```
 * 创建新节点：使用`create_node`方法创建新节点，并指定其层级和过期时间。
+  * `create_node`：创建一个新节点，返回指向新节点的指针。
+    ```cpp
+    template <typename K, typename V>
+    NodeWithTTL<K, V>* SkipListWithCache<K, V>::create_node(const K& key, const V& value, int level, int ttl_seconds) { 
+        typename NodeWithTTL<K, V>::TimePoint expiration_time;
+        // 如果过期时间为永久
+        if (ttl_seconds ==  PERMANENT_TTL) {
+            // 过期时间为最大时间
+            expiration_time = std::chrono::steady_clock::time_point::max();
+        } else {
+            // 过期时间为当前时间加上过期时间
+            expiration_time = std::chrono::steady_clock::now() + std::chrono::seconds(ttl_seconds);
+        }
+        NodeWithTTL<K, V>* n = new NodeWithTTL<K, V>(key, value, level, expiration_time);
+        return n;
+    }
+    ```
 * 更新前向指针：在每一层，将新节点的前向指针指向更新路径中的下一个节点。同时，将更新路径中的节点指向新节点。
 * 增加元素计数：更新跳表中的元素数量。
 
-6. 插入缓存
+1. 插入缓存
 ```cpp
     cache.put(key, value, ttl_seconds); // 将数据插入缓存
 ```
@@ -687,11 +716,13 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 *过期控制：支持节点的过期删除，保证数据的时效性。*
 
 1. 打印调试信息，初始化当前节点
+
 ```cpp
     std::cout << "search_element-----------------" << std::endl;
     NodeWithTTL<K, V>* current = this->_header; // 当前节点
     V value; // 存储查询到的值
 ```
+
 * 打印调试信息，表明已经开始执行查找操作。
 * `current`：初始化为跳表的头节点`_header`，从头节点开始遍历跳表。
 * `value`：用于临时存储缓存中的值。
@@ -769,153 +800,341 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 
 ###### `delete_element(const K&)`
 
+*线程安全：`delete_element`是线程安全的；*
+
+*时间复杂度：删除操作的平均时间复杂度为$O(\log n)$，其中 $n$ 是跳表的节点数量*
+
+*动态层级调整：在删除节点后，自动调整跳表的层级，保持跳表的高效性*
+
+*缓存同步更新：删除跳表中的数据时，同步删除缓存中的数据，保证数据的一致性*
+
+1. **查找初始化**：初始化当前节点与更新路径
+
 ```cpp
-template <typename K, typename V>
-void SkipListWithCache<K, V>::delete_element(const K& key) { 
-    std::cout << "delete_element-----------------" << std::endl;
-    mtx.lock(); // 加锁
-
     NodeWithTTL<K, V>* current = this->_header; // 当前节点
-    NodeWithTTL<K, V>* update[_max_level + 1]; // 更新节点
-    memset(update, 0, sizeof(NodeWithTTL<K, V>*) * (_max_level + 1));
+    NodeWithTTL<K, V>* update[_max_level + 1]; // 更新路径数组
+    memset(update, 0, sizeof(NodeWithTTL<K, V>*) * (_max_level + 1)); // 初始化更新路径
+```
 
+* `current`：指向跳表的头节点，从头节点开始遍历跳表。
+* `update`：数组用于记录从头节点到目标节点的路径。在删除节点时，需要更新这条路径上的前向指针。
+* 使用 `memset` 将 `update` 数组中的所有指针初始化为 `nullptr`。
+
+2. **查找并更新路径**：遍历跳表，寻找目标节点的位置
+```cpp
     for (int i = _skip_list_level; i >= 0; i--) { 
         while (current->forward[i] != nullptr && current->forward[i]->getKey() < key) {
-            current = current->forward[i];
+            current = current->forward[i]; // 向前移动
         }
-        update[i] = current;
+        update[i] = current; // 记录路径中的节点
     }
-    current = current->forward[0];
-
-    if (current != nullptr && current->getKey() == key) { 
-        for (int i = 0; i <= _skip_list_level; i++) { 
-            if (update[i]->forward[i] != current) {
-                break;
-            }
-            update[i]->forward[i] = current->forward[i];
-        }
-
-        while (_skip_list_level > 0 && _header->forward[_skip_list_level] == nullptr) {
-            _skip_list_level--;
-        }
-
-        std::cout << "Successfully deleted key: " << key << std::endl;
-        _element_count--; // 元素个数减1
-    }
-
-    mtx.unlock(); // 解锁
-    cache.remove(key);// 删除缓存中的数据
-};
-
+    current = current->forward[0]; // 移动到最低层的下一个节点
 ```
+
+* 从**跳表的最高层**开始逐层查找目标节点。
+  * 在每一层中，不断沿着 `forward` 指针向前移动，直到找到比 `key` 大或等于 `key` 的节点。
+  * 记录路径：将每一层中的最后一个未越过目标节点的节点存入 `update` 数组。
+  * 最后，`current` 指向最低层中的下一个节点。
+
+3. **删除节点**：检查节点是否存在，并进行删除
+
+```cpp
+    if (current != nullptr && current->getKey() == key)
+```
+
+* 如果 `current` 节点非空且键等于 `key`，说明找到了目标节点。
+
+  1) **更新前向指针，删除节点**
+    ```cpp
+    for (int i = 0; i <= _skip_list_level; i++) { 
+        if (update[i]->forward[i] != current) {
+            break; // 如果当前层的前向指针不指向目标节点，则停止
+        }
+        update[i]->forward[i] = current->forward[i]; // 跳过目标节点
+    }
+
+    ```
+    * 逐层更新前向指针：
+        * 在每一层中，将路径数组中的节点的前向指针直接指向目标节点的下一个节点（跳过目标节点）。
+        * 如果某一层的前向指针不指向目标节点，则停止更新该层及其以上的层。
+
+  2) **检查并更新跳表的层级**
+    ```cpp
+    while (_skip_list_level > 0 && _header->forward[_skip_list_level] == nullptr) {
+            _skip_list_level--; // 如果最高层为空，减少跳表的层级
+    }
+    ```
+
+    * 如果最高层级为空（即该层没有节点），则减少跳表的层级。这是跳表的动态层级调整机制。
+
+  3) **打印成功信息并减少元素计数**
+    ```cpp
+    std::cout << "Successfully deleted key: " << key << std::endl;
+    _element_count--; // 元素个数减1
+    
+    ```
+
+    * 打印成功信息，并减少跳表的元素计数。
+
+4. **同步删除缓存数据**：删除缓存中的数据
+   ```cpp
+    cache.remove(key); // 删除缓存中的数据
+
+   ```
+   * **解锁**：操作完成后释放锁，允许其他线程访问。
+   * **同步删除缓存中的数据**：调用缓存的 `remove` 方法，将对应的键值从缓存中删除。
 
 ###### `dump_file()`
 
+*`dump_file()`实现了一个跳表的持久化功能，即将跳表中的数据保存到文件中。*
+
+*过期控制：使用时间戳命名的文件来保存当前跳表中未过期的节点*
+
+*线程安全的：`dump_file()`是线程安全的*
+
+1. 获取当前时间并格式化为 "yyyyMMddHHmmss" 格式
+
 ```cpp
-template <typename K, typename V>
-void SkipListWithCache<K, V>::dump_file() {
-    // 获取当前时间并格式化 "yyyyMMddHHmmss" 格式
-    auto now = std::chrono::system_clock::now();
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now); // 转换为time_t
-    std::tm* now_tm = std::localtime(&now_c); // 转换为tm
+    auto now = std::chrono::system_clock::now(); // 获取当前系统时间
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now); // 转换为 time_t 类型
+    std::tm* now_tm = std::localtime(&now_c); // 转换为 tm 结构体
 
     char time_str[20]; // 用于保存格式化后的时间字符串
-    std::strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", now_tm); // 格式化时间字符串
+    std::strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", now_tm); // 格式化时间
 
-    // 创建包含时间戳的文件名
+```
+
+* 这段代码获取当前系统时间，并将其格式化为 `"yyyyMMddHHmmss"` 格式的字符串。
+* `strftime` 用于将时间格式化为易于阅读的形式，例如：`20241012153045`，表示 `2024年10月12日15:30:45`。
+
+2. 创建包含时间戳的文件名
+
+```cpp
     std::string filename = "store/dumpFile_cache_" + std::string(time_str);
-    
+```
+
+* 创建文件名，并包含时间戳，以确保每次调用该函数时都生成唯一的文件名。
+* 文件将存储在 `"store"` 目录下，并命名为类似 `dumpFile_cache_20241012153045` 的格式。
+
+3. 打印调试信息并加锁
+```cpp
     std::cout << "dump_file-----------------" << std::endl;
     FILE_IO_MUTEX.lock(); // 加锁
+```
+
+* 打印调试信息，表明已进入持久化操作。
+* 加锁：使用 `mutex` 锁住文件 `I/O` 操作，确保在多线程环境下不会出现文件访问冲突。
+
+4. 打开文件并检查是否打开成功
+```cpp
     _file_writer.open(filename); // 打开文件
 
-    // 如果文件打开失败
     if (!_file_writer.is_open()) { 
         std::cerr << "Failed to open file: " << filename << std::endl;
         FILE_IO_MUTEX.unlock(); // 解锁
         return;
     }
+```
 
-    NodeWithTTL<K, V>* node = this->_header->forward[0]; // 当前节点
+* 打开文件以进行写入操作。如果文件打开失败，打印错误信息并解锁。
+
+5. 遍历跳表，将未过期数据写入文件
+```cpp
+    NodeWithTTL<K, V>* node = this->_header->forward[0]; // 从头节点的第一个元素开始遍历
 
     while (node != nullptr) { 
         if (!is_expired(node->getExpireTime())) {
             _file_writer << node->getKey() << ":" << node->getValue() << ":" << node->getRemainingTime() << "\n";
             std::cout << node->getKey() << ":" << node->getValue() << ":" << node->getRemainingTime() << ";\n";
         }
-        node = node->forward[0];
+        node = node->forward[0]; // 移动到下一个节点
     }
 
-    _file_writer.flush(); // 刷新文件
+```
+
+* **遍历跳表**：从头节点的第一个前向节点开始，逐个遍历跳表中的所有节点。
+* **检查过期状态**：使用 `is_expired` 方法判断节点是否过期。如果未过期，将数据写入文件中。
+  * `is_expired` 方法用于检查节点是否过期，如果过期时间早于当前时间，则返回 `true`，否则返回 `false`。
+    ```cpp
+    template <typename K, typename V>
+    bool SkipListWithCache<K, V>::is_expired(const typename NodeWithTTL<K, V>::TimePoint& expiration_time) const {
+        return expiration_time < std::chrono::steady_clock::now();
+    };
+    ```
+* **写入格式**：每行的数据格式为 `key:value:remaining_time`。
+* 同时打印该节点的键值信息，便于调试。
+
+6. 刷新文件并关闭
+```cpp
+    _file_writer.flush(); // 刷新文件，确保数据写入磁盘
     _file_writer.close(); // 关闭文件
 
+```
+
+* **刷新文件**：调用 `flush` 方法，将缓冲区中的数据立即写入磁盘。
+* **关闭文件**：写入完成后关闭文件，释放资源。
+
+7. 解锁并返回
+
+```cpp
     FILE_IO_MUTEX.unlock(); // 解锁
     return;
-}
 ```
+
+* **解锁**：释放互斥锁，允许其他线程进行文件操作。
+* **返回**：结束函数。
 
 ###### `load_file()`
 
-```cpp
-template <typename K, typename V>
-void SkipListWithCache<K, V>::load_file() { 
+* **功能**：`load_file()` 实现了从文件中加载数据到跳表的功能。确保程序重启或系统崩溃时，可以从持久化文件恢复跳表中的数据，并将这些数据重新插入到跳表中。
 
+* **线程安全**：`load_file()` 是线程安全的，使用了 `mutex` 对文件 `I/O` 操作进行了加锁。
+
+1. 加锁，打印调试信息，并打开文件。
+```cpp
     FILE_IO_MUTEX.lock(); // 加锁
     std::cout << "Loading data from file..." << std::endl;
     _file_reader.open(DEFAULT_STORE_FILE); // 打开文件
 
+```
+* **加锁**：使用 `mutex` 锁定文件操作，避免多个线程同时读取文件造成竞争条件。
+* **调试信息**：打印“加载数据”信息，表明数据加载过程已经开始。
+* **打开文件**：尝试打开持久化文件 `DEFAULT_STORE_FILE`。
+
+2. 检查文件是否成功打开
+```cpp
     if (!_file_reader.is_open()) { 
         std::cerr << "Failed to open file: " << DEFAULT_STORE_FILE << std::endl;
         FILE_IO_MUTEX.unlock(); // 解锁
         return;
     }
 
-    std::string line; // 行数据
-    K* key = new K(); // 键
-    V* value = new V(); // 值
-    std::string* expiration_time = new std::string(); // 剩余时间 
+```
+* 如果文件打开失败，则打印错误信息，并立即解锁和返回，终止加载过程。
 
+3. 初始化临时变量
+```cpp
+    std::string line; // 存储文件中的一行数据
+    K* key = new K(); // 动态分配键
+    V* value = new V(); // 动态分配值
+    std::string* expiration_time = new std::string(); // 动态分配过期时间
+
+```
+
+* `line`：用于存储从文件中读取的每一行数据。
+* `key`、`value`、`expiration_time`：分别用于保存从文件中解析出的键、值和剩余时间。
+
+4. 从文件中逐行读取数据
+```cpp
     while (getline(_file_reader, line)) { 
-        get_key_value_from_string(line, key, value, expiration_time); // 从字符串中获取键值对
+        get_key_value_from_string(line, key, value, expiration_time); // 从字符串中提取键值对
         if (key->empty() || value->empty() || expiration_time->empty()) {
-            continue;
+            continue; // 跳过无效行
         }
 
-        insert_element(*key, *value, stoi(*expiration_time)); // 插入元素
-        std::cout << "key: " << *key << ", " << "value: " << *value << ", " << "expiration_time: " << *expiration_time << std::endl;
+        insert_element(*key, *value, stoi(*expiration_time)); // 插入元素到跳表
+        std::cout << "key: " << *key << ", " << "value: " << *value 
+                  << ", " << "expiration_time: " << *expiration_time << std::endl;
     } 
 
+```
+
+* **逐行读取数据**：使用 `getline` 从文件中读取每一行内容。
+* **解析键值对**：调用 `get_key_value_from_string` 函数，将读取的字符串解析为键、值和过期时间。
+    * `get_key_value_from_string` 函数用于从字符串中提取键、值和过期时间。
+      ```cpp
+        template <typename K, typename V>
+        void SkipListWithCache<K, V>::get_key_value_from_string(const std::string& str, std::string* key, std::string* value, std::string* expiration_time) { 
+    
+            if (!is_valid_string(str)) { 
+                return;
+            }
+            size_t pos1 = str.find(delimiter); // 查找第一个分隔符的位置
+            size_t pos2 = str.find(delimiter, pos1 + 1); // 查找第二个分隔符的位置
+
+            *key = str.substr(0, pos1); // 获取键
+            *value = str.substr(pos1 + 1, pos2 - pos1 - 1); // 获取值
+            *expiration_time = str.substr(pos2 + 1); // 获取剩余时间
+
+            return;
+        }
+
+      ```
+
+      * `is_valid_string` 函数用于检查字符串是否有效，如果字符串为空或长度小于等于1，则返回 `false`，否则返回 `true`。  
+        ```cpp
+        template <typename K, typename V>
+        bool SkipListWithCache<K, V>::is_valid_string(const std::string& str) { 
+            // 如果字符串str非空，并且字符串中包含分隔符delimiter，那么返回true
+            // find()函数返回字符串中第一个匹配的位置，如果没有找到匹配的位置，则返回std::string::npos
+            if (!str.empty()&& str.find(delimiter) != std::string::npos) { 
+                return true;
+            }
+
+            return false;
+        }
+        ```
+
+* **跳过无效数据**：如果解析后的键、值或过期时间为空，则跳过该行。
+* **插入数据**：将解析出的键值对和过期时间插入到跳表中。
+* **打印调试信息**：打印当前行的键、值和剩余时间，便于跟踪加载过程。
+
+1. 释放动态分配的内存
+```cpp
     delete key; // 删除键
     delete value; // 删除值
     delete expiration_time; // 删除剩余时间
 
+```
+* 使用 `new` 分配的内存需要手动释放，避免内存泄漏。
+
+6. 关闭文件并解锁
+
+```cpp
     _file_reader.close(); // 关闭文件
     FILE_IO_MUTEX.unlock(); // 解锁
 
-    return;
-}
 ```
+
+* **关闭文件**：释放文件资源。
+* **解锁**：释放互斥锁，允许其他线程访问文件。
 
 ###### `display_skiplist()`
 
+*按照跳表结构，打印跳表*
+
+1. 遍历跳表的每一层
+
 ```cpp
-template <typename K, typename V>
-void SkipListWithCache<K, V>::display_skiplist() {
-    
-    std::cout << "\n*****Skip List*****"<<"\n"; 
     for (int i = 0; i <= _skip_list_level; i++) {
         NodeWithTTL<K, V> *node = this->_header->forward[i]; 
         std::cout << "Level " << i << ": ";
+
+```
+* `for` 循环：遍历跳表的每一层，从第 `0` 层到当前跳表的最高层 `_skip_list_level`。
+* `this->_header->forward[i]`：在每一层，从头节点的第 `i` 层前向指针开始遍历。
+* 打印层级信息，如 `"Level 0: "`，表示当前正在展示第 `0` 层的节点信息。
+
+2. 遍历每一层中的节点
+```cpp
         while (node != NULL) {
             std::cout << node->getKey() << ":" << node->getValue() << ";";
             node = node->forward[i];
         }
-        std::cout << std::endl;
-    }
-}
+
 ```
+* `while` 循环：沿着每一层的前向指针遍历该层的所有节点。
+* 打印节点信息：
+    * `node->getKey()`：获取当前节点的键。
+    * `node->getValue()`：获取当前节点的值。
+    * 打印格式为：`key:value`;，多个节点之间用 ; 分隔。
+* 移动到下一个节点：`node = node->forward[i]`，在同一层向前移动到下一个节点。
 
 ###### `display_cache()`
+
+*打印缓存中的所有键值对*
+
+* 调用 `cache.display()` 函数，打印缓存中的所有键值对。
 
 ```cpp
 template <typename K, typename V>
@@ -923,3 +1142,97 @@ void SkipListWithCache<K, V>::display_cache() {
     cache.display();
 }
 ```
+
+###### 周期性数据持久化策略
+
+`periodic_save()`
+
+*启动一个后台线程，每隔指定的时间间隔（interval_seconds 秒）执行一次数据持久化操作。*
+
+*持久化方法：调用 dump_file() 将跳表的数据保存到文件中。*
+
+```cpp
+template <typename K, typename V>
+void SkipListWithCache<K, V>::periodic_save(int interval_seconds) {
+    // 启动后台线程
+    std::thread([this, interval_seconds]() {
+        while (keep_running) { 
+            std::this_thread::sleep_for(std::chrono::seconds(interval_seconds)); // 每隔interval_seconds秒执行一次
+            dump_file(); // 数据持久化
+        }
+    }).detach();
+}
+```
+
+1. `std::thread`：创建一个新的线程来执行周期性任务；
+2. `sleep_for`：线程进入休眠状态，等待指定的时间间隔；
+3. `detach`：线程与主线程分离，后台独立运行。这意味着主线程不会等待该线程完成；
+4. `keep_running`：使用 `std::atomic<bool>` 变量控制线程的运行状态。当设置为 `false` 时，停止循环。
+
+`stop_periodic_save()`
+
+*停止周期性持久化策略*
+
+```cpp
+template <typename K, typename V>
+void SkipListWithCache<K, V>::stop_periodic_save() {
+    keep_running = false; // 停止后台线程
+}
+```
+
+1. 设置控制标志 `keep_running` 为 `false`，使持久化线程中的 `while` 循环条件不再成立，从而停止持久化线程的执行。
+
+###### 定期删除策略
+
+`periodic_cleanup()`
+
+*启动一个后台线程，每隔指定的时间间隔（interval_seconds 秒）执行一次数据清理操作。*
+
+```cpp
+template <typename K, typename V>
+void SkipListWithCache<K, V>::periodic_cleanup(int interval_seconds) {
+    running_cleanup = true; // 运行清理
+    std::thread([this, interval_seconds]() {
+        while (running_cleanup) { 
+            remove_skiplist_expired(); // 删除过期数据
+            std::this_thread::sleep_for(std::chrono::seconds(interval_seconds)); // 每隔interval_seconds秒执行一次
+        }
+    }).detach();
+}
+```
+
+1. `running_cleanup`：使用 `std::atomic<bool>` 变量控制线程的运行状态；
+2. `detach`：与主线程分离，允许后台线程独立运行；
+   
+3. `remove_skiplist_expired()`：执行过期数据的删除操作，确保跳表中没有无效数据。
+   1) `remove_skiplist_expired()`：删除跳表中的过期数据。
+   ```cpp
+    template <typename K, typename V>
+    void SkipListWithCache<K, V>::remove_skiplist_expired() {
+        NodeWithTTL<K, V>* current = this->_header;
+
+        while (current->forward[0] != nullptr) { 
+            if (is_expired(current->forward[0]->getExpireTime())) {
+                NodeWithTTL<K, V>* expired_node = current->forward[0];
+                // 删除节点
+                delete_element(expired_node->getKey());
+            } else {
+                current = current->forward[0]; // 下一个节点
+            }
+        }
+    };
+
+   ```
+
+`stop_periodic_cleanup()`
+
+*停止周期性删除过期数据*
+
+```cpp
+template <typename K, typename V>
+void SkipListWithCache<K, V>::stop_periodic_cleanup() {
+    running_cleanup = false; // 停止清理
+}
+```
+
+* 设置控制标志 `running_cleanup` 为 `false`，使清理线程中的 `while` 循环条件不再成立，从而停止该线程的执行。
