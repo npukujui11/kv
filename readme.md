@@ -1,21 +1,23 @@
-> 该项目基于Skiplist-CPP项目进行开发，Skiplist-CPP项目地址：[https://github.com/youngyangyang04/Skiplist-CPP]
-> 在其基础上，添加了LRU缓存功能，支持惰性删除和周期性存盘策略等功能，对其Node类和SkipList类有较大修改，新增了LRUCache类。使用Skiplist-CPP项目的测试用例，对其进行了测试。
-> 引用项目标明出处即可。
+> 1. 该项目基于Skiplist-CPP项目进行开发，Skiplist-CPP项目地址：[https://github.com/youngyangyang04/Skiplist-CPP] \
+> 2. 在Skiplist-CPP项目基础上，添加了LRU缓存功能，支持惰性删除和周期性存盘策略等功能，对其Node类和SkipList类有较大修改，新增了LRUCache类。使用Skiplist-CPP项目的测试用例，对其进行了测试。\
+> 3. 引用项目标明出处即可。
 
 
 # 基于跳表的键值型数据库
 
-## 1 功能描述
-
-### 1.1 功能列表
+# 功能描述
 
 1. **功能一：** 支持键值对的增加、删除、修改、查询、设置过期时间、打印跳表操作。
+
 2. **功能二：** 实现了 `LRU` 算法对设置了过期时间的键值对进行管理。
+
 3. **功能三：** 支持存储 `int`, `string` 等基本数据类型，也可以通过运算符重载支持自定义数据类型。
+
 4. **功能四：** 支持对过期键值对进行定向删除和惰性删除。
+
 5. **功能五：** 支持数据持久化和周期性数据存盘策略。
 
-### 1.2 提供接口
+## 提供接口
 
 * insert_element(插入数据)
 * delete_element(删除数据)
@@ -28,24 +30,36 @@
 * periodic_cleanup(定期清理过期数据)
 * stop_periodic_cleanup(停止定期清理过期数据)
 
-### 1.3 项目内文件
+# 项目内文件
 
 * skiplish.h Skiplist-CPP项目中的跳表实现
 * skiplist_cache.h 基于Skiplist-CPP项目的跳表实现，添加了LRU缓存功能、惰性删除、主动删除、周期性存盘策略等功能
 * LRU.h LRU缓存实现
 
-* /test/1.跳表的定义.cpp 测试 `skiplist.h` 中跳表的 `Node` 类
-* /test/2.跳表的插入.cpp 测试 `skiplist.h` 中跳表的 `insert_element` 操作
-* /test/3.跳表的删除.cpp 测试 `skiplist.h` 中跳表的 `delete_element` 和 `search_element` 操作
-* /test/4.跳表的打印.cpp 测试 `skiplist.h` 中跳表的 `display_skiplist` 操作
-* /test/5.跳表的持久化.cpp 测试 `skiplist.h` 中跳表的 `dump_file` 操作
-* /test/6.跳表的加载.cpp 测试 `skiplist.h` 中跳表的 `load_file` 操作
-* /test/7.stress_test.cpp `Skiplist-CPP`中的 `stress_test.cpp`
-* /test/8.LRU缓存.cpp 测试 `LRU.h` 中的 `LRUCache` 类
-* /test/9.LRU中惰性删除的实现.cpp 测试 `LRU.h` 中的 `LRUCache` 类的惰性删除功能
-* /test/10.插入带过期时间的元素.cpp 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的插入带过期时间的元素功能
-* /test/11.生成和读取持久化文件2.cpp 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的 `dump_file` 和 `load_file` 功能
-* /test/12.数据周期性持久化策略.cpp 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的周期性持久化策略
+* /test/1.跳表的定义.cpp
+  * 测试 `skiplist.h` 中跳表的 `Node` 类
+* /test/2.跳表的插入.cpp
+  * 测试 `skiplist.h` 中跳表的 `insert_element` 操作
+* /test/3.跳表的删除.cpp
+  * 测试 `skiplist.h` 中跳表的 `delete_element` 和 `search_element` 操作
+* /test/4.跳表的打印.cpp
+  * 测试 `skiplist.h` 中跳表的 `display_skiplist` 操作
+* /test/5.跳表的持久化.cpp
+  * 测试 `skiplist.h` 中跳表的 `dump_file` 操作
+* /test/6.跳表的加载.cpp
+  * 测试 `skiplist.h` 中跳表的 `load_file` 操作
+* /test/7.stress_test.cpp
+  * `Skiplist-CPP`中的 `stress_test.cpp`
+* /test/8.LRU缓存.cpp
+  * 测试 `LRU.h` 中的 `LRUCache` 类
+* /test/9.LRU中惰性删除的实现.cpp
+  * 测试 `LRU.h` 中的 `LRUCache` 类的惰性删除功能
+* /test/10.插入带过期时间的元素.cpp
+  * 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的插入带过期时间的元素功能
+* /test/11.生成和读取持久化文件2.cpp
+  * 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的 `dump_file` 和 `load_file` 功能
+* /test/12.数据周期性持久化策略.cpp
+  * 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的周期性持久化策略
 * /test/13.过期数据周期性删除策略.cpp 测试 `skiplist_cache.h` 中的 `SkipListWithCache` 类的过期数据周期性删除策略
 
 * /store/dumpFile `skiplist.h` 中跳表的 `dump_file` 操作生成的持久化文件
@@ -53,13 +67,13 @@
 
 * readme.md 项目详细说明文档
 
-## 2 具体实现细节
+# 具体实现细节
 
-### 2.1 LRU.h (LRU 缓存实现)
+## LRU.h (LRU 缓存实现)
 
-*实现一个支持过期时间功能的 `LRU` 键值对缓存。`LRU` 缓存是一种常用的数据结构，用于在缓存满时，自动淘汰最久未使用的数据。*
+> 实现一个支持过期时间功能的 `LRU` 键值对缓存。`LRU` 缓存是一种常用的数据结构，用于在缓存满时，自动淘汰最久未使用的数据。
 
-#### 2.1.1 **`LRUCache`类**
+### `LRUCache` 类
 
 ```cpp
 template <typename K, typename V>
@@ -88,7 +102,7 @@ private:
 };
 ```
 
-##### 成员变量
+#### `LRUCache` 成员变量
 
 ```cpp
 public: 
@@ -105,29 +119,29 @@ private:
     std::list<CacheNode> cache_list;
 ```
 
-* `TimePoint` 是一个时间点类型的别名，用来记录数据的过期时间。我们通过 `using TimePoint = std::chrono::steady_clock::time_piont;` 或者 `typedef TimePoint std::chrono::steady_clock::time_piont;` 定义了 `TimePoint` 类型，用于表示键值对的过期时间。
+> `TimePoint` 是一个时间点类型的别名，用来记录数据的过期时间。我们通过 `using TimePoint = std::chrono::steady_clock::time_piont;` 或者 `typedef TimePoint std::chrono::steady_clock::time_piont;` 定义了 `TimePoint` 类型，用于表示键值对的过期时间。
 
-###### `CacheNode` 结构体
+##### `CacheNode` 结构体
 
 * `CacheNode` 是缓存中的每个节点，它保存了键 `key`，值 `value` 和过期时间 `expire_time`。
 
-###### `_capacity`
+##### `_capacity`
 
 * `_capacity` 是缓存的最大容量，即最多可以存储多少个键值对。
 
-###### `cache_map`
+##### `cache_map`
 
 * `cache_map` 是一个哈希表，用于快速查找键值对在缓存中的位置。
 
-###### `cache_list`
+##### `cache_list`
 
 * `cache_list` 是一个双向链表，用于维护键值对的访问顺序。链表中的节点按照访问顺序从前往后排列，越靠近链表尾部的节点表示越久未使用。
 
-`LRU` 算法的核心数据结构是哈希表和双向链表，可以使用哈希表**快速查找元素**的特性，通过键来查找对应的值。通过哈希表，我们可以在 `O(1)` 的时间复杂度内查找到某个键是否存在于缓存中，并获取到该键对应的链表节点的迭代器 `std::list<CacheNode>::iterator`，通过这个迭代器，我们可以直接访问链表中的节点，并进行高效的移动操作（例如将节点移动到链表的头部）。这样可以**结合双向链表的效率**，可以在 `O(1)` 的时间内将最近使用的元素移到链表头部，并在缓存满时高效删除最久未使用的元素。
+> `LRU` 算法的核心数据结构是哈希表和双向链表，可以使用哈希表**快速查找元素**的特性，通过键来查找对应的值。通过哈希表，我们可以在 `O(1)` 的时间复杂度内查找到某个键是否存在于缓存中，并获取到该键对应的链表节点的迭代器 `std::list<CacheNode>::iterator`，通过这个迭代器，我们可以直接访问链表中的节点，并进行高效的移动操作（例如将节点移动到链表的头部）。这样可以**结合双向链表的效率**，可以在 `O(1)` 的时间内将最近使用的元素移到链表头部，并在缓存满时高效删除最久未使用的元素。
+>
+> 哈希表解决了快速查找的问题，因为它可以根据键快速定位元素的位置。双向链表解决了维护访问顺序的问题，因为它允许快速的节点移动（更新最近使用的元素顺序）和删除（淘汰最久未使用的元素）。*
 
-*哈希表解决了快速查找的问题，因为它可以根据键快速定位元素的位置。双向链表解决了维护访问顺序的问题，因为它允许快速的节点移动（更新最近使用的元素顺序）和删除（淘汰最久未使用的元素）。*
-
-##### 成员函数
+#### `LRUCache` 成员函数
 
 ```cpp
 public:
@@ -142,7 +156,7 @@ private:
     bool is_expired(const TimePoint& expire_time) const;
 ```
 
-###### `LRUCache()`
+##### `LRUCache()`
 
 * 将缓存容量设置为 3。
 
@@ -153,7 +167,7 @@ LRUCache<K, V>::LRUCache() {
 }
 ```
 
-###### `LRUCache(size_t)`
+##### `LRUCache(size_t)`
 
 * 将缓存容量设置为 `capacity`。
 
@@ -164,7 +178,7 @@ LRUCache<K, V>::LRUCache(size_t capacity) {
 }
 ```
 
-###### `get(const K&, V&)`
+##### `get(const K&, V&)`
 
 1. `get()` 用于根据键 `key` 获取对应的值 `value`，并且将该数据标记为“最近使用”。首先在哈希表中查找 `key`。如果没有找到，则返回 `false`。
 2. 如果找到，并且数据未过期，则将该节点移动到链表头部，标识它是最近使用的，并返回 true。
@@ -192,7 +206,7 @@ bool LRUCache<K, V>::get(const K& key, V& value) {
 }
 ```
 
-###### `put(const K&, const V&, int)`
+##### `put(const K&, const V&, int)`
 
 1. `put()`用于将键值对插入缓存中，并且设置该键值对的过期时间。
 2. 计算过期时间：当前时间加上 `ttl_seconds`（以秒为单位）。
@@ -232,7 +246,7 @@ void LRUCache<K, V>::put(const K& key, const V& value, int ttl_seconds) {
 }
 ```
 
-###### `remove(const K&)`
+##### `remove(const K&)`
 
 1. `remove()` 方法用于从缓存中移除指定键的元素。
 2. 在哈希表中查找 `key`，如果找到，则从链表和哈希表中删除。
@@ -254,7 +268,7 @@ bool LRUCache<K, V>::remove(const K& key) {
 }
 ```
 
-###### `display()`
+##### `display()`
 
 * `display()` 方法用于打印缓存中的所有数据，从最近使用到最久未使用的顺序显示。
 
@@ -270,7 +284,7 @@ void LRUCache<K, V>::display() {
 }
 ```
 
-###### `remove_expired()`
+##### `remove_expired()`
 
 * `remove_expired()` 方法用于批量删除已经过期的数据。遍历缓存的链表尾部，删除所有过期的数据。
 
@@ -290,7 +304,7 @@ void LRUCache<K, V>::remove_expired() {
 }
 ```
 
-###### `is_expired()`
+##### `is_expired()`
 
 1. `is_expired()` 方法用于判断数据是否过期。如果当前时间大于等于数据的过期时间，则返回 `true`，否则返回 `false`。
 2. 通过比较当前时间与节点的 `expire_time` 来实现。如果当前时间大于 `expire_time`，则数据已经过期，返回 `true`，否则返回 `false`。
@@ -302,13 +316,13 @@ bool LRUCache<K, V>::is_expired(const TimePoint& expire_time) const{
 }
 ```
 
-### 2.2 skiplist_cache.h (基于跳表实现的键值对数据库引擎)
+## **`skiplist_cache.h` (基于跳表实现的键值对数据库引擎)**
 
-*实现了一个结合跳表（SKip List）和LRU缓存（Least Recently Used Cache）的数据结构。该系统支持过期时间控制、数据持久化以及周期性删除。*
+> 实现了一个结合跳表（SKip List）和LRU缓存（Least Recently Used Cache）的数据结构。该系统支持过期时间控制、数据持久化以及周期性删除。
 
-#### 2.2.1 **`NodeWithTTL`类(节点类)**
+### **`NodeWithTTL`类(节点类)**
 
-跳表的每个节点保存了键值对，还支持**过期时间（TTL）**控制
+* 跳表的每个节点保存了键值对，还支持**过期时间（TTL）**控制
 
 ```cpp
 template <typename K, typename V>
@@ -333,7 +347,7 @@ private:
 };
 ```
 
-##### 2.2.1.1 成员变量
+#### `NodeWithTTL` 成员变量
 
 ```cpp
 template <typename K, typename V>
@@ -350,27 +364,27 @@ private:
 }
 ```
 
-###### `expiration_time`
+##### `expiration_time`
 
 * `expiration_time`：用于记录数据的过期时间，通过 `TimePoint` 类型表示。
 
-###### `forward`
+##### `forward`
 
 * `forward`：前向指针数组，表示该节点在跳表的不同层级上的前向指针。跳表中的节点可以在多个层级上存在，以实现快速查找。
 
-###### `node_level`
+##### `node_level`
 
 * `node_level`: 节点层级，用于表示节点在跳表中的层级。
 
-###### `key`
+##### `key`
 
 * `key`：键，用于保存节点的键。
 
-###### `value`
+##### `value`
 
 * `value`：值，用于保存节点的值。
 
-##### 2.2.1.2 成员函数
+#### `NodeWithTTL` 成员函数
 
 ```cpp
 template <typename K, typename V>
@@ -390,11 +404,11 @@ public:
 }
 ```
 
-###### `NodeWithTTL()`
+##### `NodeWithTTL()`
 
 `NodeWithTTL()`：默认构造函数，用于创建一个空的节点。
 
-###### `NodeWithTTL(K, V, int, TimePoint)`
+##### `NodeWithTTL(K, V, int, TimePoint)`
 
 * `NodeWithTTL(K k, V v, int level, TimePoint expiration_time)`：构造函数，用于创建一个带有键值对、层级和过期时间的节点。
 
@@ -410,7 +424,7 @@ NodeWithTTL<K, V>::NodeWithTTL(K key, V value, int level, TimePoint expiration_t
 };
 ```
 
-###### `~NodeWithTTL()`
+##### `~NodeWithTTL()`
 
 `~NodeWithTTL()`：析构函数，用于释放前向指针数组。
 
@@ -421,7 +435,7 @@ NodeWithTTL<K, V>::~NodeWithTTL() {
 };
 ```
 
-###### `getExpireTime()`
+##### `getExpireTime()`
 
 `getExpireTime()`：获取节点的过期时间。
 
@@ -432,7 +446,7 @@ TimePoint NodeWithTTL<K, V>::getExpireTime() const {
 }
 ```
 
-###### `setExpireTime()`
+##### `setExpireTime()`
 
 `setExpireTime(TimePoint t)`：设置节点的过期时间。
 
@@ -444,7 +458,7 @@ void NodeWithTTL<K, V>::setExpireTime(TimePoint expiration_time) {
 
 ```
 
-###### `getRemainingTime()`
+##### `getRemainingTime()`
 
 `getRemainingTime()`：获取节点剩余的TTL时间。
 
@@ -455,7 +469,7 @@ int NodeWithTTL<K, V>::getRemainingTime() const {
 }
 ```
 
-###### `getKey()`
+##### `getKey()`
 
 `getKey()`：获取节点的键。
 
@@ -466,7 +480,7 @@ K NodeWithTTL<K, V>::getKey() const {
 };
 ```
 
-###### `getValue()`
+##### `getValue()`
 
 `getValue()`：获取节点的值。
 
@@ -477,7 +491,7 @@ V NodeWithTTL<K, V>::getValue() const {
 };
 ```
 
-###### `setValue(V)`
+##### `setValue(V)`
 
 `setValue(V value)`：设置节点的值。
 
@@ -488,11 +502,11 @@ void NodeWithTTL<K, V>::setValue(V value) {
 };
 ```
 
-#### 2.2.2 **`SkipListWithCache`类(跳表类)**
+### **`SkipListWithCache` 类(跳表类)**
 
-*实现了一个带有缓存和数据持久化的跳表。其不仅支持跳表的基本操作，还增加了LRU缓存、惰性删除、过期数据删除以及数据持久化功能。*
+> 实现了一个带有缓存和数据持久化的跳表。其不仅支持跳表的基本操作，还增加了LRU缓存、惰性删除、过期数据删除以及数据持久化功能。
 
-##### **成员变量**
+#### `SkipListWithCache` 成员变量
 
 ```cpp
 template <typename K, typename V>
@@ -512,35 +526,35 @@ private:
 }
 ```
 
-###### `max_level`
+##### `max_level`
 
 * `max_level`：跳表的最大层级。
 
-###### `_skip_list_level`
+##### `_skip_list_level`
 
 * `_skip_list_level`：当前跳表的层级。
 
-###### `_header`
+##### `_header`
 
 * `_header`：跳表的头节点。
 
-###### `_file_writer`
+##### `_file_writer`
 
 * `_file_writer`：文件写入。用于将跳表数据写入文件。
 
-###### `_file_reader`
+##### `_file_reader`
 
 * `_file_reader`：文件读取。用于从文件中读取跳表数据。
 
-###### `_element_count`
+##### `_element_count`
 
 * `_element_count`：跳表中元素的数量。
 
-###### `_cache`
+##### `_cache`
 
 * `_cache`：LRU缓存。用于缓存跳表中的数据。
 
-##### **成员函数**
+#### `SkipListWithCache` 成员函数
 
 ```cpp
 template <typename K, typename V>
@@ -576,9 +590,9 @@ private:
 }
 ```
 
-###### `SkipListWithCache(int, size_t)`
+##### `SkipListWithCache(int, size_t)`
 
-`SkipListWithCache(int max_level, size_t cache_size)`：构造函数，初始化跳表的最大层级和LRU缓存的大小。
+* `SkipListWithCache(int max_level, size_t cache_size)`：构造函数，初始化跳表的最大层级和LRU缓存的大小。
 
 ```cpp
 template <typename K, typename V>
@@ -594,7 +608,7 @@ SkipListWithCache<K, V>::SkipListWithCache(int max_level, size_t cache_capacity)
 * 初始化跳表的最大层级，并创建头节点。
 * 初始化 `LRU` 缓存的大小，并创建 `LRU` 缓存。
 
-###### `~SkipListWithCache()`
+##### `~SkipListWithCache()`
 
 `~SkipListWithCache()`：析构函数，释放跳表的内存。
 
@@ -642,13 +656,11 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 
 * delete释放跳表的内存。
 
-###### `insert_element(const K&, const V&, int)`
+##### `insert_element(const K&, const V&, int)`
 
-*双重存储：`insert_element`确保在跳表中插入一个新元素，并将其添加到 `LRU` 缓存中；*
-
-*线程安全：`insert_element`是线程安全的；*
-
-*时间复杂度：插入的平均时间复杂度为$O(\log n)$*
+> 双重存储：`insert_element` 确保在跳表中插入一个新元素，并将其添加到 `LRU` 缓存中；\
+> 线程安全：`insert_element`是线程安全的；\
+> 时间复杂度：插入的平均时间复杂度为$O(\log n)$
 
 1. 我们首先定义当前节点和更新路径数组
 
@@ -725,14 +737,14 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 5. 插入新节点
 
     ```cpp
-        NodeWithTTL<K, V>* inserted_node = create_node(key, value, random_level, ttl_seconds); // 创建新节点
+    NodeWithTTL<K, V>* inserted_node = create_node(key, value, random_level, ttl_seconds); // 创建新节点
 
-        for (int i = 0; i <= random_level; i++) {
-            inserted_node->forward[i] = update[i]->forward[i]; // 新节点的前向指针指向更新路径的下一个节点
-            update[i]->forward[i] = inserted_node; // 更新路径的前向指针指向新节点
-        }
+    for (int i = 0; i <= random_level; i++) {
+        inserted_node->forward[i] = update[i]->forward[i]; // 新节点的前向指针指向更新路径的下一个节点
+        update[i]->forward[i] = inserted_node; // 更新路径的前向指针指向新节点
+    }
 
-        _element_count++; // 增加元素计数
+    _element_count++; // 增加元素计数
     ```
 
     * 创建新节点：使用 `create_node` 方法创建新节点，并指定其层级和过期时间。
@@ -766,13 +778,11 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 
     * 缓存同步：将插入的数据同步存入 `LRU` 缓存。
 
-###### `search_element(const K&)`
+##### `search_element(const K&)`
 
-*多层查找结构：利用跳表的多层索引，提高查找速度。*
-
-*缓存与跳表结合：缓存存储最近访问的数据，避免频繁访问跳表，提高性能。*
-
-*过期控制：支持节点的过期删除，保证数据的时效性。*
+> *多层查找结构：利用跳表的多层索引，提高查找速度。* \
+> *缓存与跳表结合：缓存存储最近访问的数据，避免频繁访问跳表，提高性能。* \
+> *过期控制：支持节点的过期删除，保证数据的时效性。*
 
 1. 打印调试信息，初始化当前节点
 
@@ -811,7 +821,6 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
             }
         }
         current = current->forward[0]; // 转到最低层的下一个节点
-
         ```
 
         * 从当前跳表的最高层 `_skip_list_level` 开始查找。
@@ -865,15 +874,12 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 
     * 如果遍历跳表后未找到目标节点，打印“未找到”信息，并返回`false`。
 
-###### `delete_element(const K&)`
+##### `delete_element(const K&)`
 
-**线程安全**：`delete_element()` 是线程安全的；
-
-**时间复杂度**：删除操作的平均时间复杂度为$O(\log n)$，其中 $n$ 是跳表的节点数量
-
-**动态层级调整**：在删除节点后，自动调整跳表的层级，保持跳表的高效性
-
-**缓存同步更新**：删除跳表中的数据时，同步删除缓存中的数据，保证数据的一致性
+> **线程安全**：`delete_element()` 是线程安全的；\
+> **时间复杂度**：删除操作的平均时间复杂度为$O(\log n)$，其中 $n$ 是跳表的节点数量 \
+> **动态层级调整**：在删除节点后，自动调整跳表的层级，保持跳表的高效性 \
+> **缓存同步更新**：删除跳表中的数据时，同步删除缓存中的数据，保证数据的一致性
 
 1. **查找初始化**：初始化当前节点与更新路径
 
@@ -956,15 +962,13 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
    * **解锁**：操作完成后释放锁，允许其他线程访问。
    * **同步删除缓存中的数据**：调用缓存的 `remove` 方法，将对应的键值从缓存中删除。
 
-###### `dump_file()`
+##### `dump_file()`
 
-`dump_file()`实现了一个跳表的持久化功能，即将跳表中的数据保存到文件中。
+> `dump_file()`实现了一个跳表的持久化功能，即将跳表中的数据保存到文件中。\
+> **过期控制**：使用时间戳命名的文件来保存当前跳表中未过期的节点 \
+> **线程安全的**：`dump_file()`是线程安全的
 
-**过期控制**：使用时间戳命名的文件来保存当前跳表中未过期的节点
-
-**线程安全的**：`dump_file()`是线程安全的
-
-1. 获取当前时间并格式化为 "yyyyMMddHHmmss" 格式
+1. 获取当前时间并格式化为 `"yyyyMMddHHmmss"` 格式
 
     ```cpp
     auto now = std::chrono::system_clock::now(); // 获取当前系统时间
@@ -1059,11 +1063,10 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
    * **解锁**：释放互斥锁，允许其他线程进行文件操作。
    * **返回**：结束函数。
 
-###### `load_file()`
+##### `load_file()`
 
-* **功能**：`load_file()` 实现了从文件中加载数据到跳表的功能。确保程序重启或系统崩溃时，可以从持久化文件恢复跳表中的数据，并将这些数据重新插入到跳表中。
-
-* **线程安全**：`load_file()` 是线程安全的，使用了 `mutex` 对文件 `I/O` 操作进行了加锁。
+> **功能**：`load_file()` 实现了从文件中加载数据到跳表的功能。确保程序重启或系统崩溃时，可以从持久化文件恢复跳表中的数据，并将这些数据重新插入到跳表中。\
+> **线程安全**：`load_file()` 是线程安全的，使用了 `mutex` 对文件 `I/O` 操作进行了加锁。
 
 1. 加锁，打印调试信息，并打开文件。
 
@@ -1177,9 +1180,9 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
    * **关闭文件**：释放文件资源。
    * **解锁**：释放互斥锁，允许其他线程访问文件。
 
-###### `display_skiplist()`
+##### `display_skiplist()`
 
-**打印跳表**: `display_skiplist` 函数用于打印跳表的所有节点信息，包括键、值和过期时间。
+> **打印跳表**: `display_skiplist` 函数用于打印跳表的所有节点信息，包括键、值和过期时间。
 
 1. 遍历跳表的每一层
 
@@ -1209,9 +1212,9 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
      * 打印格式为：`key:value`;，多个节点之间用 ; 分隔。
    * 移动到下一个节点：`node = node->forward[i]`，在同一层向前移动到下一个节点。
 
-###### `display_cache()`
+##### `display_cache()`
 
-打印缓存中的所有键值对
+> 打印缓存中的所有键值对
 
 * 调用 `cache.display()` 函数，打印缓存中的所有键值对。
 
@@ -1222,13 +1225,11 @@ void SkipListWithCache<K, V>::display_cache() {
 }
 ```
 
-###### 周期性数据持久化策略
+##### 周期性数据持久化策略
 
-`periodic_save()`
-
-*启动一个后台线程，每隔指定的时间间隔（interval_seconds 秒）执行一次数据持久化操作。*
-
-**持久化方法**：调用 dump_file() 将跳表的数据保存到文件中。*
+> `periodic_save()`\
+> 启动一个后台线程，每隔指定的时间间隔（interval_seconds 秒）执行一次数据持久化操作。\
+> **持久化方法**：调用 dump_file() 将跳表的数据保存到文件中。*
 
 ```cpp
 template <typename K, typename V>
@@ -1248,9 +1249,8 @@ void SkipListWithCache<K, V>::periodic_save(int interval_seconds) {
 3. `detach`：线程与主线程分离，后台独立运行。这意味着主线程不会等待该线程完成；
 4. `keep_running`：使用 `std::atomic<bool>` 变量控制线程的运行状态。当设置为 `false` 时，停止循环。
 
-`stop_periodic_save()`
-
-**停止周期性持久化策略**: `stop_periodic_save` 函数用于停止周期性持久化策略。
+> `stop_periodic_save()`\
+> **停止周期性持久化策略**: `stop_periodic_save` 函数用于停止周期性持久化策略。
 
 ```cpp
 template <typename K, typename V>
@@ -1261,11 +1261,10 @@ void SkipListWithCache<K, V>::stop_periodic_save() {
 
 1. 设置控制标志 `keep_running` 为 `false`，使持久化线程中的 `while` 循环条件不再成立，从而停止持久化线程的执行。
 
-###### 定期删除策略
+##### 定期删除策略
 
-`periodic_cleanup()`
-
-*启动一个后台线程，每隔指定的时间间隔（interval_seconds 秒）执行一次数据清理操作。*
+> `periodic_cleanup()`\
+> 启动一个后台线程，每隔指定的时间间隔（`interval_seconds` 秒）执行一次数据清理操作。
 
 ```cpp
 template <typename K, typename V>
@@ -1303,9 +1302,8 @@ void SkipListWithCache<K, V>::periodic_cleanup(int interval_seconds) {
     };
    ```
 
-`stop_periodic_cleanup()`
-
-**停止周期性删除过期数据**：`stop_periodic_cleanup` 函数用于停止周期性删除过期数据的策略。
+> `stop_periodic_cleanup()` \
+> **停止周期性删除过期数据**：`stop_periodic_cleanup` 函数用于停止周期性删除过期数据的策略。
 
 ```cpp
 template <typename K, typename V>
