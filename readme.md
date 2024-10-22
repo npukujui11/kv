@@ -1,6 +1,6 @@
 # 基于跳表的键值型数据库
 
-## 1 功能描述 
+## 1 功能描述
 
 ### 1.1 功能列表
 
@@ -194,7 +194,7 @@ void LRUCache<K, V>::put(const K& key, const V& value, int ttl_seconds) {
 ###### `remove(const K&)`
 
 1. `remove()` 方法用于从缓存中移除指定键的元素。
-2. 在哈希表中查找`key`，如果找到，则从链表和哈希表中删除。
+2. 在哈希表中查找 `key`，如果找到，则从链表和哈希表中删除。
 
 ```cpp
 template <typename K, typename V>
@@ -253,6 +253,7 @@ void LRUCache<K, V>::remove_expired() {
 
 1. `is_expired()` 方法用于判断数据是否过期。如果当前时间大于等于数据的过期时间，则返回 `true`，否则返回 `false`。
 2. 通过比较当前时间与节点的 `expire_time` 来实现。如果当前时间大于 `expire_time`，则数据已经过期，返回 `true`，否则返回 `false`。
+
 ```cpp
 template <typename K, typename V>
 bool LRUCache<K, V>::is_expired(const TimePoint& expire_time) const{
@@ -266,7 +267,7 @@ bool LRUCache<K, V>::is_expired(const TimePoint& expire_time) const{
 
 #### 2.2.1 **`NodeWithTTL`类(节点类)**
 
-*跳表的每个节点保存了键值对，还支持过期时间（TTL）控制*
+跳表的每个节点保存了键值对，还支持**过期时间（TTL）**控制
 
 ```cpp
 template <typename K, typename V>
@@ -291,7 +292,7 @@ private:
 };
 ```
 
-##### 成员变量
+##### 2.2.1.1 成员变量
 
 ```cpp
 template <typename K, typename V>
@@ -307,9 +308,10 @@ private:
     TimePoint expiration_time;  // 过期时间
 }
 ```
+
 ###### `expiration_time`
 
-* `expiration_time`：用于记录数据的过期时间，通过`TimePoint`类型表示。
+* `expiration_time`：用于记录数据的过期时间，通过 `TimePoint` 类型表示。
 
 ###### `forward`
 
@@ -327,7 +329,7 @@ private:
 
 * `value`：值，用于保存节点的值。
 
-##### 成员函数
+##### 2.2.1.2 成员函数
 
 ```cpp
 template <typename K, typename V>
@@ -349,7 +351,7 @@ public:
 
 ###### `NodeWithTTL()`
 
-`NodeWithTTL()`：默认构造函数，用于创建一个空的节点。 
+`NodeWithTTL()`：默认构造函数，用于创建一个空的节点。
 
 ###### `NodeWithTTL(K, V, int, TimePoint)`
 
@@ -549,9 +551,9 @@ SkipListWithCache<K, V>::SkipListWithCache(int max_level, size_t cache_capacity)
 ```
 
 * 初始化跳表的最大层级，并创建头节点。
-* 初始化`LRU`缓存的大小，并创建`LRU`缓存。
+* 初始化 `LRU` 缓存的大小，并创建 `LRU` 缓存。
 
-######  `~SkipListWithCache()`
+###### `~SkipListWithCache()`
 
 `~SkipListWithCache()`：析构函数，释放跳表的内存。
 
@@ -584,7 +586,8 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 * 关闭文件读取和写入。
 * 停止周期性删除过期数据和周期性数据持久化策略。
 * 递归删除跳表节点。
-  * `clear`函数递归删除跳表节点。
+  * `clear` 函数递归删除跳表节点。
+
     ```cpp
     template <typename K, typename V>
     void SkipListWithCache<K, V>::clear(NodeWithTTL<K, V>* current) {
@@ -595,28 +598,32 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
     };
 
     ```
+
 * delete释放跳表的内存。
 
 ###### `insert_element(const K&, const V&, int)`
 
-*双重存储：`insert_element`确保在跳表中插入一个新元素，并将其添加到`LRU`缓存中；*
+*双重存储：`insert_element`确保在跳表中插入一个新元素，并将其添加到 `LRU` 缓存中；*
 
 *线程安全：`insert_element`是线程安全的；*
 
 *时间复杂度：插入的平均时间复杂度为$O(\log n)$*
 
 1. 我们首先定义当前节点和更新路径数组
-```cpp
+
+    ```cpp
     NodeWithTTL<K, V>* current = this->_header; // 当前节点
     NodeWithTTL<K, V>* update[_max_level + 1]; // 更新路径数组
     memset(update, 0, sizeof(NodeWithTTL<K, V>*) * (_max_level + 1)); // 初始化更新数组
-```
-* `current`：从跳表的头节点`_header`开始遍历。
-* `update`：数组用于记录从头节点到目标节点的路径。在插入新节点时，需要更新这条路径中的前向指针。
-* 使用`memset`将`update`数组中的所有指针初始化为`nullptr`。
+    ```
+
+    * `current`：从跳表的头节点 `_header` 开始遍历。
+    * `update`：数组用于记录从头节点到目标节点的路径。在插入新节点时，需要更新这条路径中的前向指针。
+    * 使用 `memset` 将 `update` 数组中的所有指针初始化为`nullptr`。
 
 2. 遍历跳表，寻找插入位置
-```cpp
+
+    ```cpp
     for (int i = _skip_list_level; i >= 0; i--) { 
         while (current->forward[i] != nullptr && current->forward[i]->getKey() < key) {
             current = current->forward[i]; // 向前遍历当前层
@@ -624,24 +631,28 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
         update[i] = current; // 记录路径
     }
     current = current->forward[0]; // 移动到最低层的下一个节点
-```
-* 从最高层开始遍历跳表，直到最低层，寻找目标插入位置。
-    * 如果当前层的前向指针指向的节点的键小于`key`，继续向前移动。
-    * 更新路径：在每一层，记录搜索路径中的节点到`update`数组。
-* 最终，`current`移动到最低层的第一个节点。
+    ```
+
+    * 从最高层开始遍历跳表，直到最低层，寻找目标插入位置。
+    * 如果当前层的前向指针指向的节点的键小于 `key`，继续向前移动。
+    * 更新路径：在每一层，记录搜索路径中的节点到 `update` 数组。
+    * 最终，`current` 移动到最低层的第一个节点。
 
 3. 判断是否存在重复键
-```cpp
+
+    ```cpp
     if (current != nullptr && current->getKey() == key) {
         mtx.unlock(); // 解锁
         return 1; // 已存在，插入失败
     }
-```
-* 如果当前节点非空且键与目标`key`相同，说明键已经存在于跳表中。
-* 解锁并返回`1`，表示插入失败。
+    ```
+
+    * 如果当前节点非空且键与目标 `key` 相同，说明键已经存在于跳表中。
+    * 解锁并返回 `1`，表示插入失败。
 
 4. 如果键不存在，创建新节点
-```cpp
+
+    ```cpp
     int random_level = get_random_level(); // 获取随机层级
 
     if (random_level > _skip_list_level) { // 如果随机层级大于当前层级
@@ -651,10 +662,12 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
         _skip_list_level = random_level; // 更新当前跳表层级
     }
 
-```
-* 随机层级：跳表中每个节点随机出现在若干层中。这是跳表高效查找的核心。`get_random_level()`返回节点的层级。
+    ```
+
+    * 随机层级：跳表中每个节点随机出现在若干层中。这是跳表高效查找的核心。`get_random_level()` 返回节点的层级。
     * get_random_level()：返回一个随机层级，用于新节点。  
-    ```cpp
+
+        ```cpp
         template <typename K, typename V>
         int SkipListWithCache<K, V>::get_random_level() {
             int k = 1;
@@ -664,48 +677,53 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
             k = (k < _max_level) ? k : _max_level;
             return k;
         };
-    ```
-* 更新层级：如果新节点的层级高于当前跳表的最高层级，需要更新跳表层级，并将路径中对应层级指向头节点。
+        ```
+
+    * 更新层级：如果新节点的层级高于当前跳表的最高层级，需要更新跳表层级，并将路径中对应层级指向头节点。
 
 5. 插入新节点
 
-```cpp
-    NodeWithTTL<K, V>* inserted_node = create_node(key, value, random_level, ttl_seconds); // 创建新节点
-
-    for (int i = 0; i <= random_level; i++) {
-        inserted_node->forward[i] = update[i]->forward[i]; // 新节点的前向指针指向更新路径的下一个节点
-        update[i]->forward[i] = inserted_node; // 更新路径的前向指针指向新节点
-    }
-
-    _element_count++; // 增加元素计数
-```
-* 创建新节点：使用`create_node`方法创建新节点，并指定其层级和过期时间。
-  * `create_node`：创建一个新节点，返回指向新节点的指针。
     ```cpp
-    template <typename K, typename V>
-    NodeWithTTL<K, V>* SkipListWithCache<K, V>::create_node(const K& key, const V& value, int level, int ttl_seconds) { 
-        typename NodeWithTTL<K, V>::TimePoint expiration_time;
-        // 如果过期时间为永久
-        if (ttl_seconds ==  PERMANENT_TTL) {
-            // 过期时间为最大时间
-            expiration_time = std::chrono::steady_clock::time_point::max();
-        } else {
-            // 过期时间为当前时间加上过期时间
-            expiration_time = std::chrono::steady_clock::now() + std::chrono::seconds(ttl_seconds);
+        NodeWithTTL<K, V>* inserted_node = create_node(key, value, random_level, ttl_seconds); // 创建新节点
+
+        for (int i = 0; i <= random_level; i++) {
+            inserted_node->forward[i] = update[i]->forward[i]; // 新节点的前向指针指向更新路径的下一个节点
+            update[i]->forward[i] = inserted_node; // 更新路径的前向指针指向新节点
         }
-        NodeWithTTL<K, V>* n = new NodeWithTTL<K, V>(key, value, level, expiration_time);
-        return n;
-    }
+
+        _element_count++; // 增加元素计数
     ```
-* 更新前向指针：在每一层，将新节点的前向指针指向更新路径中的下一个节点。同时，将更新路径中的节点指向新节点。
-* 增加元素计数：更新跳表中的元素数量。
 
-1. 插入缓存
-```cpp
+    * 创建新节点：使用 `create_node` 方法创建新节点，并指定其层级和过期时间。
+    * `create_node`：创建一个新节点，返回指向新节点的指针。
+
+        ```cpp
+        template <typename K, typename V>
+        NodeWithTTL<K, V>* SkipListWithCache<K, V>::create_node(const K& key, const V& value, int level, int ttl_seconds) { 
+            typename NodeWithTTL<K, V>::TimePoint expiration_time;
+            // 如果过期时间为永久
+            if (ttl_seconds ==  PERMANENT_TTL) {
+                // 过期时间为最大时间
+                expiration_time = std::chrono::steady_clock::time_point::max();
+            } else {
+                // 过期时间为当前时间加上过期时间
+                expiration_time = std::chrono::steady_clock::now() + std::chrono::seconds(ttl_seconds);
+            }
+            NodeWithTTL<K, V>* n = new NodeWithTTL<K, V>(key, value, level, expiration_time);
+            return n;
+        }
+        ```
+
+    * 更新前向指针：在每一层，将新节点的前向指针指向更新路径中的下一个节点。同时，将更新路径中的节点指向新节点。
+    * 增加元素计数：更新跳表中的元素数量。
+
+6. 插入缓存
+
+    ```cpp
     cache.put(key, value, ttl_seconds); // 将数据插入缓存
-```
+    ```
 
-* 缓存同步：将插入的数据同步存入`LRU`缓存。
+    * 缓存同步：将插入的数据同步存入 `LRU` 缓存。
 
 ###### `search_element(const K&)`
 
@@ -717,216 +735,230 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 
 1. 打印调试信息，初始化当前节点
 
-```cpp
+    ```cpp
     std::cout << "search_element-----------------" << std::endl;
     NodeWithTTL<K, V>* current = this->_header; // 当前节点
     V value; // 存储查询到的值
-```
+    ```
 
-* 打印调试信息，表明已经开始执行查找操作。
-* `current`：初始化为跳表的头节点`_header`，从头节点开始遍历跳表。
-* `value`：用于临时存储缓存中的值。
+    * 打印调试信息，表明已经开始执行查找操作。
+    * `current`：初始化为跳表的头节点 `_header`，从头节点开始遍历跳表。
+    * `value`：用于临时存储缓存中的值。
 
 2. 优先从缓存中查找
-```cpp
+
+    ```cpp
     if (cache.get(key, value)) { 
         std::cout << "Found key: " << key << ", value: " << value << " from cache" << std::endl;
         return true; // 缓存中存在
     }
-```
-* 缓存优先查找：
-    * 调用缓存的`get`方法查询是否存在`key`。
-    * 如果存在，打印调试信息并返回`true`，表示查找成功。
-* 缓存的优势：通过缓存加速频繁访问的数据查询，避免访问跳表，提高性能。
+    ```
+
+    * 缓存优先查找：
+    * 调用缓存的 `get` 方法查询是否存在 `key`。
+    * 如果存在，打印调试信息并返回 `true`，表示查找成功。
+    * 缓存的优势：通过缓存加速频繁访问的数据查询，避免访问跳表，提高性能。
 
 3. 在跳表中查找目标
- 
- 1) 在各层级遍历查找目标位置
-    ```cpp
-    for (int i = _skip_list_level; i >= 0; i--) { 
-        while (current->forward[i] != nullptr && current->forward[i]->getKey() < key) {
-            current = current->forward[i]; // 在当前层向前移动
-        }
-    }
-    current = current->forward[0]; // 转到最低层的下一个节点
 
-    ```
-    * 从当前跳表的最高层 `_skip_list_level` 开始查找。
-    * 在每一层中，不断沿着前向指针 `forward` 向前移动，直到找到比 `key` 大或等于 `key` 的节点。
-    * **降层**：如果在当前层未找到目标，继续在下一层查找。
-    * **最终位置**：在最低层中，`current` 指向目标位置的前一个节点，或者直接指向目标节点。
+   1) 在各层级遍历查找目标位置
 
- 2) 检查节点是否存在
-    ```cpp
-        if (current != nullptr && current->getKey() == key) {
-        // 如果节点过期，删除节点
+        ```cpp
+        for (int i = _skip_list_level; i >= 0; i--) { 
+            while (current->forward[i] != nullptr && current->forward[i]->getKey() < key) {
+                current = current->forward[i]; // 在当前层向前移动
+            }
         }
-    
-    ```
-    * **检查节点是否存在**：如果 current 非空且其键等于 key，说明找到了目标节点。
+        current = current->forward[0]; // 转到最低层的下一个节点
+
+        ```
+
+        * 从当前跳表的最高层 `_skip_list_level` 开始查找。
+        * 在每一层中，不断沿着前向指针 `forward` 向前移动，直到找到比 `key` 大或等于 `key` 的节点。
+        * **降层**：如果在当前层未找到目标，继续在下一层查找。
+        * **最终位置**：在最低层中，`current` 指向目标位置的前一个节点，或者直接指向目标节点。
+
+   2) 检查节点是否存在
+
+       ```cpp
+       if (current != nullptr && current->getKey() == key) {
+       // 如果节点过期，删除节点
+       }
+       
+       ```
+
+       * **检查节点是否存在**：如果 `current` 非空且其键等于 `key`，说明找到了目标节点。
 
 4. 检查节点是否过期
-```cpp
+
+    ```cpp
     if (is_expired(current->getExpireTime())) {
         std::cout << "Found key: " << key << ", value: " << current->getValue() 
                     << " from skip list, but expired" << std::endl;
         delete_element(key); // 删除过期节点
         return false; // 返回false，表示数据已过期
     }
-```
+    ```
 
-* 如果节点存在，但其过期时间已到（即 `is_expired` 返回 `true`），打印过期信息，并执行以下操作：
-  * 删除节点：调用 `delete_element` 方法从跳表中删除该节点。
-  * 返回 `false`：表明查找失败，因为数据已过期。
+    * 如果节点存在，但其过期时间已到（即 `is_expired` 返回 `true`），打印过期信息，并执行以下操作：
+    * 删除节点：调用 `delete_element` 方法从跳表中删除该节点。
+    * 返回 `false`：表明查找失败，因为数据已过期。
 
 5. 返回查询结果
-```cpp
-    std::cout << "Found key: " << key << ", value: " << current->getValue() 
-                  << " from skip list" << std::endl;
-    return true; // 返回true，表示查找成功
-```
 
-* 如果节点存在且未过期，打印调试信息并返回 `true`，表示查找成功。
+    ```cpp
+    std::cout << "Found key: " << key << ", value: " << current->getValue() 
+                << " from skip list" << std::endl;
+    return true; // 返回true，表示查找成功
+    ```
+
+    * 如果节点存在且未过期，打印调试信息并返回 `true`，表示查找成功。
 
 6. 如果未找到节点
 
-```cpp
+    ```cpp
     std::cout << "Not found key: " << key << std::endl;
     return false; // 返回false，表示查找失败
 
-```
+    ```
 
-* 如果遍历跳表后未找到目标节点，打印“未找到”信息，并返回`false`。
+    * 如果遍历跳表后未找到目标节点，打印“未找到”信息，并返回`false`。
 
 ###### `delete_element(const K&)`
 
-*线程安全：`delete_element`是线程安全的；*
+**线程安全**：`delete_element()` 是线程安全的；
 
-*时间复杂度：删除操作的平均时间复杂度为$O(\log n)$，其中 $n$ 是跳表的节点数量*
+**时间复杂度**：删除操作的平均时间复杂度为$O(\log n)$，其中 $n$ 是跳表的节点数量
 
-*动态层级调整：在删除节点后，自动调整跳表的层级，保持跳表的高效性*
+**动态层级调整**：在删除节点后，自动调整跳表的层级，保持跳表的高效性
 
-*缓存同步更新：删除跳表中的数据时，同步删除缓存中的数据，保证数据的一致性*
+**缓存同步更新**：删除跳表中的数据时，同步删除缓存中的数据，保证数据的一致性
 
 1. **查找初始化**：初始化当前节点与更新路径
 
-```cpp
+    ```cpp
     NodeWithTTL<K, V>* current = this->_header; // 当前节点
     NodeWithTTL<K, V>* update[_max_level + 1]; // 更新路径数组
     memset(update, 0, sizeof(NodeWithTTL<K, V>*) * (_max_level + 1)); // 初始化更新路径
-```
+    ```
 
-* `current`：指向跳表的头节点，从头节点开始遍历跳表。
-* `update`：数组用于记录从头节点到目标节点的路径。在删除节点时，需要更新这条路径上的前向指针。
-* 使用 `memset` 将 `update` 数组中的所有指针初始化为 `nullptr`。
+    * `current`：指向跳表的头节点，从头节点开始遍历跳表。
+    * `update`：数组用于记录从头节点到目标节点的路径。在删除节点时，需要更新这条路径上的前向指针。
+    * 使用 `memset` 将 `update` 数组中的所有指针初始化为 `nullptr`。
 
 2. **查找并更新路径**：遍历跳表，寻找目标节点的位置
-```cpp
+
+    ```cpp
     for (int i = _skip_list_level; i >= 0; i--) { 
         while (current->forward[i] != nullptr && current->forward[i]->getKey() < key) {
             current = current->forward[i]; // 向前移动
         }
-        update[i] = current; // 记录路径中的节点
-    }
-    current = current->forward[0]; // 移动到最低层的下一个节点
-```
+            update[i] = current; // 记录路径中的节点
+        }
+        current = current->forward[0]; // 移动到最低层的下一个节点
+    ```
 
-* 从**跳表的最高层**开始逐层查找目标节点。
-  * 在每一层中，不断沿着 `forward` 指针向前移动，直到找到比 `key` 大或等于 `key` 的节点。
-  * 记录路径：将每一层中的最后一个未越过目标节点的节点存入 `update` 数组。
-  * 最后，`current` 指向最低层中的下一个节点。
+    * 从**跳表的最高层**开始逐层查找目标节点。
+    * 在每一层中，不断沿着 `forward` 指针向前移动，直到找到比 `key` 大或等于 `key` 的节点。
+    * 记录路径：将每一层中的最后一个未越过目标节点的节点存入 `update` 数组。
+    * 最后，`current` 指向最低层中的下一个节点。
 
 3. **删除节点**：检查节点是否存在，并进行删除
 
-```cpp
+    ```cpp
     if (current != nullptr && current->getKey() == key)
-```
+    ```
 
-* 如果 `current` 节点非空且键等于 `key`，说明找到了目标节点。
+    * 如果 `current` 节点非空且键等于 `key`，说明找到了目标节点。
 
-  1) **更新前向指针，删除节点**
-    ```cpp
-    for (int i = 0; i <= _skip_list_level; i++) { 
-        if (update[i]->forward[i] != current) {
-            break; // 如果当前层的前向指针不指向目标节点，则停止
+    1) **更新前向指针，删除节点**
+
+        ```cpp
+        for (int i = 0; i <= _skip_list_level; i++) { 
+            if (update[i]->forward[i] != current) {
+                break; // 如果当前层的前向指针不指向目标节点，则停止
+            }
+            update[i]->forward[i] = current->forward[i]; // 跳过目标节点
         }
-        update[i]->forward[i] = current->forward[i]; // 跳过目标节点
-    }
+        ```
 
-    ```
-    * 逐层更新前向指针：
-        * 在每一层中，将路径数组中的节点的前向指针直接指向目标节点的下一个节点（跳过目标节点）。
-        * 如果某一层的前向指针不指向目标节点，则停止更新该层及其以上的层。
+       * 逐层更新前向指针：
+           * 在每一层中，将路径数组中的节点的前向指针直接指向目标节点的下一个节点（跳过目标节点）。
+           * 如果某一层的前向指针不指向目标节点，则停止更新该层及其以上的层。
 
-  2) **检查并更新跳表的层级**
-    ```cpp
-    while (_skip_list_level > 0 && _header->forward[_skip_list_level] == nullptr) {
-            _skip_list_level--; // 如果最高层为空，减少跳表的层级
-    }
-    ```
+    2) **检查并更新跳表的层级**
 
-    * 如果最高层级为空（即该层没有节点），则减少跳表的层级。这是跳表的动态层级调整机制。
+        ```cpp
+        while (_skip_list_level > 0 && _header->forward[_skip_list_level] == nullptr) {
+                _skip_list_level--; // 如果最高层为空，减少跳表的层级
+        }
+        ```
 
-  3) **打印成功信息并减少元素计数**
-    ```cpp
-    std::cout << "Successfully deleted key: " << key << std::endl;
-    _element_count--; // 元素个数减1
-    
-    ```
+       * 如果最高层级为空（即该层没有节点），则减少跳表的层级。这是跳表的动态层级调整机制。
 
-    * 打印成功信息，并减少跳表的元素计数。
+    3) **打印成功信息并减少元素计数**
+
+        ```cpp
+        std::cout << "Successfully deleted key: " << key << std::endl;
+        _element_count--; // 元素个数减1
+        
+        ```
+
+       * 打印成功信息，并减少跳表的元素计数。
 
 4. **同步删除缓存数据**：删除缓存中的数据
+
    ```cpp
     cache.remove(key); // 删除缓存中的数据
-
    ```
+
    * **解锁**：操作完成后释放锁，允许其他线程访问。
    * **同步删除缓存中的数据**：调用缓存的 `remove` 方法，将对应的键值从缓存中删除。
 
 ###### `dump_file()`
 
-*`dump_file()`实现了一个跳表的持久化功能，即将跳表中的数据保存到文件中。*
+`dump_file()`实现了一个跳表的持久化功能，即将跳表中的数据保存到文件中。
 
-*过期控制：使用时间戳命名的文件来保存当前跳表中未过期的节点*
+**过期控制**：使用时间戳命名的文件来保存当前跳表中未过期的节点
 
-*线程安全的：`dump_file()`是线程安全的*
+**线程安全的**：`dump_file()`是线程安全的
 
 1. 获取当前时间并格式化为 "yyyyMMddHHmmss" 格式
 
-```cpp
+    ```cpp
     auto now = std::chrono::system_clock::now(); // 获取当前系统时间
     std::time_t now_c = std::chrono::system_clock::to_time_t(now); // 转换为 time_t 类型
     std::tm* now_tm = std::localtime(&now_c); // 转换为 tm 结构体
 
     char time_str[20]; // 用于保存格式化后的时间字符串
     std::strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", now_tm); // 格式化时间
+    ```
 
-```
-
-* 这段代码获取当前系统时间，并将其格式化为 `"yyyyMMddHHmmss"` 格式的字符串。
-* `strftime` 用于将时间格式化为易于阅读的形式，例如：`20241012153045`，表示 `2024年10月12日15:30:45`。
+    * 这段代码获取当前系统时间，并将其格式化为 `"yyyyMMddHHmmss"` 格式的字符串。
+    * `strftime` 用于将时间格式化为易于阅读的形式，例如：`20241012153045`，表示 `2024年10月12日15:30:45`。
 
 2. 创建包含时间戳的文件名
 
-```cpp
+    ```cpp
     std::string filename = "store/dumpFile_cache_" + std::string(time_str);
-```
+    ```
 
-* 创建文件名，并包含时间戳，以确保每次调用该函数时都生成唯一的文件名。
-* 文件将存储在 `"store"` 目录下，并命名为类似 `dumpFile_cache_20241012153045` 的格式。
+   * 创建文件名，并包含时间戳，以确保每次调用该函数时都生成唯一的文件名。
+   * 文件将存储在 `"store"` 目录下，并命名为类似 `dumpFile_cache_20241012153045` 的格式。
 
 3. 打印调试信息并加锁
-```cpp
+
+    ```cpp
     std::cout << "dump_file-----------------" << std::endl;
     FILE_IO_MUTEX.lock(); // 加锁
-```
+    ```
 
-* 打印调试信息，表明已进入持久化操作。
-* 加锁：使用 `mutex` 锁住文件 `I/O` 操作，确保在多线程环境下不会出现文件访问冲突。
+   * 打印调试信息，表明已进入持久化操作。
+   * **加锁**：使用 `mutex` 锁住文件 `I/O` 操作，确保在多线程环境下不会出现文件访问冲突。
 
 4. 打开文件并检查是否打开成功
-```cpp
+
+    ```cpp
     _file_writer.open(filename); // 打开文件
 
     if (!_file_writer.is_open()) { 
@@ -934,12 +966,13 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
         FILE_IO_MUTEX.unlock(); // 解锁
         return;
     }
-```
+    ```
 
-* 打开文件以进行写入操作。如果文件打开失败，打印错误信息并解锁。
+   * 打开文件以进行写入操作。如果文件打开失败，打印错误信息并解锁。
 
 5. 遍历跳表，将未过期数据写入文件
-```cpp
+
+    ```cpp
     NodeWithTTL<K, V>* node = this->_header->forward[0]; // 从头节点的第一个元素开始遍历
 
     while (node != nullptr) { 
@@ -949,40 +982,41 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
         }
         node = node->forward[0]; // 移动到下一个节点
     }
+    ```
 
-```
+   * **遍历跳表**：从头节点的第一个前向节点开始，逐个遍历跳表中的所有节点。
+   * **检查过期状态**：使用 `is_expired` 方法判断节点是否过期。如果未过期，将数据写入文件中。
+     * `is_expired` 方法用于检查节点是否过期，如果过期时间早于当前时间，则返回 `true`，否则返回 `false`。
 
-* **遍历跳表**：从头节点的第一个前向节点开始，逐个遍历跳表中的所有节点。
-* **检查过期状态**：使用 `is_expired` 方法判断节点是否过期。如果未过期，将数据写入文件中。
-  * `is_expired` 方法用于检查节点是否过期，如果过期时间早于当前时间，则返回 `true`，否则返回 `false`。
     ```cpp
     template <typename K, typename V>
     bool SkipListWithCache<K, V>::is_expired(const typename NodeWithTTL<K, V>::TimePoint& expiration_time) const {
         return expiration_time < std::chrono::steady_clock::now();
     };
     ```
-* **写入格式**：每行的数据格式为 `key:value:remaining_time`。
-* 同时打印该节点的键值信息，便于调试。
+
+   * **写入格式**：每行的数据格式为 `key:value:remaining_time`。
+   * 同时打印该节点的键值信息，便于调试。
 
 6. 刷新文件并关闭
-```cpp
+
+    ```cpp
     _file_writer.flush(); // 刷新文件，确保数据写入磁盘
     _file_writer.close(); // 关闭文件
+    ```
 
-```
-
-* **刷新文件**：调用 `flush` 方法，将缓冲区中的数据立即写入磁盘。
-* **关闭文件**：写入完成后关闭文件，释放资源。
+   * **刷新文件**：调用 `flush` 方法，将缓冲区中的数据立即写入磁盘。
+   * **关闭文件**：写入完成后关闭文件，释放资源。
 
 7. 解锁并返回
 
-```cpp
+    ```cpp
     FILE_IO_MUTEX.unlock(); // 解锁
     return;
-```
+    ```
 
-* **解锁**：释放互斥锁，允许其他线程进行文件操作。
-* **返回**：结束函数。
+   * **解锁**：释放互斥锁，允许其他线程进行文件操作。
+   * **返回**：结束函数。
 
 ###### `load_file()`
 
@@ -991,41 +1025,44 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 * **线程安全**：`load_file()` 是线程安全的，使用了 `mutex` 对文件 `I/O` 操作进行了加锁。
 
 1. 加锁，打印调试信息，并打开文件。
-```cpp
+
+    ```cpp
     FILE_IO_MUTEX.lock(); // 加锁
     std::cout << "Loading data from file..." << std::endl;
     _file_reader.open(DEFAULT_STORE_FILE); // 打开文件
+    ```
 
-```
-* **加锁**：使用 `mutex` 锁定文件操作，避免多个线程同时读取文件造成竞争条件。
-* **调试信息**：打印“加载数据”信息，表明数据加载过程已经开始。
-* **打开文件**：尝试打开持久化文件 `DEFAULT_STORE_FILE`。
+   * **加锁**：使用 `mutex` 锁定文件操作，避免多个线程同时读取文件造成竞争条件。
+   * **调试信息**：打印“加载数据”信息，表明数据加载过程已经开始。
+   * **打开文件**：尝试打开持久化文件 `DEFAULT_STORE_FILE`。
 
 2. 检查文件是否成功打开
-```cpp
+
+    ```cpp
     if (!_file_reader.is_open()) { 
         std::cerr << "Failed to open file: " << DEFAULT_STORE_FILE << std::endl;
         FILE_IO_MUTEX.unlock(); // 解锁
         return;
     }
+    ```
 
-```
-* 如果文件打开失败，则打印错误信息，并立即解锁和返回，终止加载过程。
+   * 如果文件打开失败，则打印错误信息，并立即解锁和返回，终止加载过程。
 
 3. 初始化临时变量
-```cpp
+
+    ```cpp
     std::string line; // 存储文件中的一行数据
     K* key = new K(); // 动态分配键
     V* value = new V(); // 动态分配值
     std::string* expiration_time = new std::string(); // 动态分配过期时间
+    ```
 
-```
-
-* `line`：用于存储从文件中读取的每一行数据。
-* `key`、`value`、`expiration_time`：分别用于保存从文件中解析出的键、值和剩余时间。
+   * `line`：用于存储从文件中读取的每一行数据。
+   * `key`、`value`、`expiration_time`：分别用于保存从文件中解析出的键、值和剩余时间。
 
 4. 从文件中逐行读取数据
-```cpp
+
+    ```cpp
     while (getline(_file_reader, line)) { 
         get_key_value_from_string(line, key, value, expiration_time); // 从字符串中提取键值对
         if (key->empty() || value->empty() || expiration_time->empty()) {
@@ -1036,16 +1073,16 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
         std::cout << "key: " << *key << ", " << "value: " << *value 
                   << ", " << "expiration_time: " << *expiration_time << std::endl;
     } 
+    ```
 
-```
+   * **逐行读取数据**：使用 `getline` 从文件中读取每一行内容。
+   * **解析键值对**：调用 `get_key_value_from_string` 函数，将读取的字符串解析为键、值和过期时间。
+     * `get_key_value_from_string` 函数用于从字符串中提取键、值和过期时间。
 
-* **逐行读取数据**：使用 `getline` 从文件中读取每一行内容。
-* **解析键值对**：调用 `get_key_value_from_string` 函数，将读取的字符串解析为键、值和过期时间。
-    * `get_key_value_from_string` 函数用于从字符串中提取键、值和过期时间。
-      ```cpp
+        ```cpp
         template <typename K, typename V>
         void SkipListWithCache<K, V>::get_key_value_from_string(const std::string& str, std::string* key, std::string* value, std::string* expiration_time) { 
-    
+
             if (!is_valid_string(str)) { 
                 return;
             }
@@ -1058,81 +1095,82 @@ SkipListWithCache<K, V>::~SkipListWithCache() {
 
             return;
         }
-
-      ```
-
-      * `is_valid_string` 函数用于检查字符串是否有效，如果字符串为空或长度小于等于1，则返回 `false`，否则返回 `true`。  
-        ```cpp
-        template <typename K, typename V>
-        bool SkipListWithCache<K, V>::is_valid_string(const std::string& str) { 
-            // 如果字符串str非空，并且字符串中包含分隔符delimiter，那么返回true
-            // find()函数返回字符串中第一个匹配的位置，如果没有找到匹配的位置，则返回std::string::npos
-            if (!str.empty()&& str.find(delimiter) != std::string::npos) { 
-                return true;
-            }
-
-            return false;
-        }
         ```
 
-* **跳过无效数据**：如果解析后的键、值或过期时间为空，则跳过该行。
-* **插入数据**：将解析出的键值对和过期时间插入到跳表中。
-* **打印调试信息**：打印当前行的键、值和剩余时间，便于跟踪加载过程。
+        * `is_valid_string` 函数用于检查字符串是否有效，如果字符串为空或长度小于等于1，则返回 `false`，否则返回 `true`。  
 
-1. 释放动态分配的内存
-```cpp
+            ```cpp
+            template <typename K, typename V>
+            bool SkipListWithCache<K, V>::is_valid_string(const std::string& str) { 
+                // 如果字符串str非空，并且字符串中包含分隔符delimiter，那么返回true
+                // find()函数返回字符串中第一个匹配的位置，如果没有找到匹配的位置，则返回std::string::npos
+                if (!str.empty()&& str.find(delimiter) != std::string::npos) { 
+                    return true;
+                }
+
+                return false;
+            }
+            ```
+
+   * **跳过无效数据**：如果解析后的键、值或过期时间为空，则跳过该行。
+   * **插入数据**：将解析出的键值对和过期时间插入到跳表中。
+   * **打印调试信息**：打印当前行的键、值和剩余时间，便于跟踪加载过程。
+
+5. 释放动态分配的内存
+
+    ```cpp
     delete key; // 删除键
     delete value; // 删除值
     delete expiration_time; // 删除剩余时间
+    ```
 
-```
-* 使用 `new` 分配的内存需要手动释放，避免内存泄漏。
+   * 使用 `new` 分配的内存需要手动释放，避免内存泄漏。
 
 6. 关闭文件并解锁
 
-```cpp
+    ```cpp
     _file_reader.close(); // 关闭文件
     FILE_IO_MUTEX.unlock(); // 解锁
+    ```
 
-```
-
-* **关闭文件**：释放文件资源。
-* **解锁**：释放互斥锁，允许其他线程访问文件。
+   * **关闭文件**：释放文件资源。
+   * **解锁**：释放互斥锁，允许其他线程访问文件。
 
 ###### `display_skiplist()`
 
-*按照跳表结构，打印跳表*
+**打印跳表**: `display_skiplist` 函数用于打印跳表的所有节点信息，包括键、值和过期时间。
 
 1. 遍历跳表的每一层
 
-```cpp
+    ```cpp
     for (int i = 0; i <= _skip_list_level; i++) {
         NodeWithTTL<K, V> *node = this->_header->forward[i]; 
         std::cout << "Level " << i << ": ";
+    ```
 
-```
-* `for` 循环：遍历跳表的每一层，从第 `0` 层到当前跳表的最高层 `_skip_list_level`。
-* `this->_header->forward[i]`：在每一层，从头节点的第 `i` 层前向指针开始遍历。
-* 打印层级信息，如 `"Level 0: "`，表示当前正在展示第 `0` 层的节点信息。
+    * `for` 循环：遍历跳表的每一层，从第 `0` 层到当前跳表的最高层 `_skip_list_level`。
+    * `this->_header->forward[i]`：在每一层，从头节点的第 `i` 层前向指针开始遍历。
+    * 打印层级信息，如 `"Level 0: "`，表示当前正在展示第 `0` 层的节点信息。
 
 2. 遍历每一层中的节点
-```cpp
-        while (node != NULL) {
-            std::cout << node->getKey() << ":" << node->getValue() << ";";
-            node = node->forward[i];
-        }
 
-```
-* `while` 循环：沿着每一层的前向指针遍历该层的所有节点。
-* 打印节点信息：
-    * `node->getKey()`：获取当前节点的键。
-    * `node->getValue()`：获取当前节点的值。
-    * 打印格式为：`key:value`;，多个节点之间用 ; 分隔。
-* 移动到下一个节点：`node = node->forward[i]`，在同一层向前移动到下一个节点。
+    ```cpp
+    while (node != NULL) {
+        std::cout << node->getKey() << ":" << node->getValue() << ";";
+        node = node->forward[i];
+    }
+    ```
+
+   * `while` 循环：沿着每一层的前向指针遍历该层的所有节点。
+   * 打印节点信息：
+     * `node->getKey()`：获取当前节点的键。
+     * `node->getValue()`：获取当前节点的值。
+     * 打印格式为：`key:value`;，多个节点之间用 ; 分隔。
+   * 移动到下一个节点：`node = node->forward[i]`，在同一层向前移动到下一个节点。
 
 ###### `display_cache()`
 
-*打印缓存中的所有键值对*
+打印缓存中的所有键值对
 
 * 调用 `cache.display()` 函数，打印缓存中的所有键值对。
 
@@ -1149,7 +1187,7 @@ void SkipListWithCache<K, V>::display_cache() {
 
 *启动一个后台线程，每隔指定的时间间隔（interval_seconds 秒）执行一次数据持久化操作。*
 
-*持久化方法：调用 dump_file() 将跳表的数据保存到文件中。*
+**持久化方法**：调用 dump_file() 将跳表的数据保存到文件中。*
 
 ```cpp
 template <typename K, typename V>
@@ -1171,7 +1209,7 @@ void SkipListWithCache<K, V>::periodic_save(int interval_seconds) {
 
 `stop_periodic_save()`
 
-*停止周期性持久化策略*
+**停止周期性持久化策略**: `stop_periodic_save` 函数用于停止周期性持久化策略。
 
 ```cpp
 template <typename K, typename V>
@@ -1203,9 +1241,10 @@ void SkipListWithCache<K, V>::periodic_cleanup(int interval_seconds) {
 
 1. `running_cleanup`：使用 `std::atomic<bool>` 变量控制线程的运行状态；
 2. `detach`：与主线程分离，允许后台线程独立运行；
-   
+
 3. `remove_skiplist_expired()`：执行过期数据的删除操作，确保跳表中没有无效数据。
    1) `remove_skiplist_expired()`：删除跳表中的过期数据。
+
    ```cpp
     template <typename K, typename V>
     void SkipListWithCache<K, V>::remove_skiplist_expired() {
@@ -1221,12 +1260,11 @@ void SkipListWithCache<K, V>::periodic_cleanup(int interval_seconds) {
             }
         }
     };
-
    ```
 
 `stop_periodic_cleanup()`
 
-*停止周期性删除过期数据*
+**停止周期性删除过期数据**：`stop_periodic_cleanup` 函数用于停止周期性删除过期数据的策略。
 
 ```cpp
 template <typename K, typename V>
