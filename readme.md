@@ -1,6 +1,6 @@
-> 1. 该项目基于Skiplist-CPP项目进行开发，Skiplist-CPP项目地址：[https://github.com/youngyangyang04/Skiplist-CPP] \
-> 2. 在Skiplist-CPP项目基础上，添加了LRU缓存功能，支持惰性删除和周期性存盘策略等功能，对其Node类和SkipList类有较大修改，新增了LRUCache类。使用Skiplist-CPP项目的测试用例，对其进行了测试。\
-> 3. 引用项目标明出处即可。
+> 该项目基于 `Skiplist-CPP` 项目进行开发，`Skiplist-CPP`项目地址：[https://github.com/youngyangyang04/Skiplist-CPP] \
+> 在 `Skiplist-CPP`项目基础上，添加了LRU缓存功能，支持惰性删除和周期性存盘策略等功能，对其Node类和SkipList类有较大修改，新增了LRUCache类。使用Skiplist-CPP项目的测试用例，对其进行了测试。\
+> 引用项目标明出处即可。
 
 
 # 基于跳表的键值型数据库
